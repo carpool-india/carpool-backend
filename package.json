@@ -1,0 +1,36 @@
+{
+  "name": "rideshare-india",
+  "version": "1.0.0",
+  "private": true,
+  "workspaces": [
+    "admin",
+    "frontend",
+    "apps/mobile",
+    "services/*",
+    "shared/*"
+  ],
+  "scripts": {
+    "dev": "turbo run dev",
+    "build": "turbo run build",
+    "test": "turbo run test",
+    "typecheck": "turbo run typecheck",
+    "mobile": "npm run start --workspace=@rideshare/mobile",
+    "mobile:tunnel": "npm run tunnel --workspace=@rideshare/mobile",
+    "admin": "npm run dev --workspace=@rideshare/admin",
+    "frontend": "npm run dev --workspace=@rideshare/frontend",
+    "booking": "npm run dev --workspace=@rideshare/booking",
+    "payment": "npm run dev --workspace=@rideshare/payment",
+    "notification": "npm run dev --workspace=@rideshare/notification",
+    "safety": "npm run dev --workspace=@rideshare/safety"
+  },
+  "devDependencies": {
+    "react": "19.1.0",
+    "react-dom": "19.1.0",
+    "turbo": "^2.0.9",
+    "typescript": "^5.4.5"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "packageManager": "npm@10.8.1"
+}

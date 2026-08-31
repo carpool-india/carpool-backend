@@ -1,0 +1,20 @@
+CREATE TABLE trips (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  driver_id UUID NOT NULL REFERENCES users(id),
+  origin_name TEXT NOT NULL,
+  origin_point GEOMETRY(POINT, 4326) NOT NULL,
+  destination_name TEXT NOT NULL,
+  destination_point GEOMETRY(POINT, 4326) NOT NULL,
+  route_polyline TEXT,
+  departure_time TIMESTAMPTZ NOT NULL,
+  seats_total INTEGER NOT NULL CHECK (seats_total BETWEEN 1 AND 4),
+  seats_available INTEGER NOT NULL,
+  price_per_seat NUMERIC(10,2) NOT NULL,
+  status TEXT DEFAULT 'active' CHECK (status IN ('active','in_progress','completed','cancelled')),
+  is_women_only BOOLEAN DEFAULT false,
+  luggage_policy TEXT DEFAULT 'small' CHECK (luggage_policy IN ('none','small','large')),
+  cancellation_bond_paid BOOLEAN DEFAULT false,
+  created_at TIMESTAMPTZ DEFAULT now(),
+  CONSTRAINT seats_available_lte_total CHECK (seats_available <= seats_total),
+  CONSTRAINT seats_available_non_negative CHECK (seats_available >= 0)
+);

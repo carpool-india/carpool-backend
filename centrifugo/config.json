@@ -1,0 +1,13 @@
+{
+  "token_hmac_secret_key": "f362b594ba54c14cd4e068fe3639d84136d6ec2874b82c23a119265809c7bde1",
+  "api_key": "94d37487fd37ec7b7ec7bab0c36e2f4727fbde21705e5033feb9dbf3444afc24",
+  "allowed_origins": ["*"],
+  "namespaces": [
+    {
+      "name": "trip",
+      "history_size": 200,
+      "history_ttl": "168h",
+      "force_recovery": true
+    }
+  ]
+}
