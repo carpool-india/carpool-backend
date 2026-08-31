@@ -1,0 +1,123 @@
+services:
+  - type: web
+    name: rideshare-booking
+    runtime: docker
+    dockerfilePath: ./services/booking/Dockerfile
+    dockerContext: .
+    plan: free
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_ANON_KEY
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
+      - key: MATCHING_SERVICE_URL
+        value: https://rideshare-matching.onrender.com
+      - key: PAYMENT_SERVICE_URL
+        value: https://rideshare-payment.onrender.com
+      - key: NOTIFICATION_SERVICE_URL
+        value: https://rideshare-notification.onrender.com
+      - key: GOOGLE_MAPS_API_KEY
+        sync: false
+      - key: HYPERVERGE_APP_ID
+        sync: false
+      - key: HYPERVERGE_APP_KEY
+        sync: false
+      - key: CENTRIFUGO_API_URL
+        sync: false
+      - key: CENTRIFUGO_API_KEY
+        sync: false
+      - key: CENTRIFUGO_TOKEN_HMAC_SECRET
+        sync: false
+
+  - type: web
+    name: rideshare-payment
+    runtime: docker
+    dockerfilePath: ./services/payment/Dockerfile
+    dockerContext: .
+    plan: free
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_ANON_KEY
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
+      - key: RAZORPAY_KEY_ID
+        sync: false
+      - key: RAZORPAY_KEY_SECRET
+        sync: false
+      - key: RAZORPAY_WEBHOOK_SECRET
+        sync: false
+      - key: NOTIFICATION_SERVICE_URL
+        value: https://rideshare-notification.onrender.com
+
+  - type: web
+    name: rideshare-notification
+    runtime: docker
+    dockerfilePath: ./services/notification/Dockerfile
+    dockerContext: .
+    plan: free
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_ANON_KEY
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
+      - key: MSG91_AUTH_KEY
+        sync: false
+      - key: MSG91_SENDER_ID
+        value: RDSHAR
+      - key: FAST2SMS_API_KEY
+        sync: false
+      - key: GUPSHUP_API_KEY
+        sync: false
+      - key: GUPSHUP_SOURCE_NUMBER
+        sync: false
+      - key: GUPSHUP_OTP_TEMPLATE_ID
+        sync: false
+
+  - type: web
+    name: rideshare-safety
+    runtime: docker
+    dockerfilePath: ./services/safety/Dockerfile
+    dockerContext: .
+    plan: free
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_ANON_KEY
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
+      - key: NOTIFICATION_SERVICE_URL
+        value: https://rideshare-notification.onrender.com
+
+  - type: web
+    name: rideshare-matching
+    runtime: docker
+    dockerfilePath: ./services/matching/Dockerfile
+    dockerContext: ./services/matching
+    plan: free
+    healthCheckPath: /health
+    envVars:
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
+      - key: GOOGLE_MAPS_API_KEY
+        sync: false

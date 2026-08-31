@@ -1,0 +1,17 @@
+node_modules/
+dist/
+.expo/
+.turbo/
+coverage/
+*.log
+.env
+.env.local
+.DS_Store
+ios/
+android/
+*.tsbuildinfo
+__pycache__/
+.pytest_cache/
+.venv/
+venv/
+web-build/
