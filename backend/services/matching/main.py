@@ -8,7 +8,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 
 def _load_root_env() -> None:
-    env_path = Path(__file__).resolve().parents[2] / ".env"
+    env_path = Path(__file__).resolve().parents[3] / ".env"
     if not env_path.is_file():
         return
     for raw in env_path.read_text(encoding="utf-8").splitlines():
