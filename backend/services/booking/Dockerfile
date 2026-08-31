@@ -2,8 +2,8 @@ FROM node:20-alpine AS build
 WORKDIR /app
 COPY package.json ./
 COPY tsconfig.base.json ./
-COPY shared ./shared
-COPY services/booking ./services/booking
+COPY backend/shared ./shared
+COPY backend/services/booking ./services/booking
 RUN npm install --workspace=@rideshare/booking --workspace=@rideshare/types --workspace=@rideshare/utils
 WORKDIR /app/shared/types
 RUN npx tsc -p tsconfig.json

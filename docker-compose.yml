@@ -3,13 +3,13 @@ services:
   booking:
     build:
       context: .
-      dockerfile: services/booking/Dockerfile
+      dockerfile: backend/services/booking/Dockerfile
     ports:
       - "3002:3002"
     env_file: .env
   matching:
     build:
-      context: ./services/matching
+      context: ./backend/services/matching
     ports:
       - "8001:8001"
     env_file: .env
@@ -18,21 +18,21 @@ services:
   payment:
     build:
       context: .
-      dockerfile: services/payment/Dockerfile
+      dockerfile: backend/services/payment/Dockerfile
     ports:
       - "3003:3003"
     env_file: .env
   notification:
     build:
       context: .
-      dockerfile: services/notification/Dockerfile
+      dockerfile: backend/services/notification/Dockerfile
     ports:
       - "3005:3005"
     env_file: .env
   safety:
     build:
       context: .
-      dockerfile: services/safety/Dockerfile
+      dockerfile: backend/services/safety/Dockerfile
     ports:
       - "3006:3006"
     env_file: .env
@@ -40,6 +40,6 @@ services:
     image: centrifugo/centrifugo:v5
     command: centrifugo -c config.json
     volumes:
-      - ./centrifugo/config.json:/centrifugo/config.json
+      - ./backend/centrifugo/config.json:/centrifugo/config.json
     ports:
       - "8010:8000"

@@ -5,16 +5,21 @@ Production-grade carpooling MVP for India. The goal is to beat BlaBlaCar India o
 ## Layout
 
 ```
-apps/mobile          React Native + Expo SDK 51 + NativeWind
-services/booking     Node.js trips + bookings
-services/matching    Python FastAPI route matching
-services/payment     Razorpay platform fee + subscription plans
-services/notification Expo push + MSG91 + Gupshup + SOS
-services/safety      SOS, ratings, route deviation, trust score
-database/supabase    Postgres + PostGIS migrations, RLS, seeds
-shared/types         Shared TypeScript contracts
-shared/utils         Haversine, trust score, Zod validators
+mobile                        React Native + Expo SDK 51 + NativeWind
+console                        Ops/admin dashboard (Vite + React)
+frontend                       Marketing / passenger web site (Vite + React)
+backend/services/booking       Node.js trips + bookings
+backend/services/matching      Python FastAPI route matching
+backend/services/payment       Razorpay platform fee + subscription plans
+backend/services/notification  Expo push + MSG91 + Gupshup + SOS
+backend/services/safety        SOS, ratings, route deviation, trust score
+backend/database/supabase      Postgres + PostGIS migrations, RLS, seeds
+backend/shared/types           Shared TypeScript contracts
+backend/shared/utils           Haversine, trust score, Zod validators
+backend/centrifugo             Real-time chat/pub-sub config
 ```
+
+Each top-level folder (`mobile/`, `backend/`, `console/`, `frontend/`) can be deployed independently: `mobile/` via EAS/Expo, `backend/` as Docker services on any host, `console/` and `frontend/` as static Vite builds on Vercel/Netlify/etc.
 
 There is no local Postgres. Use Supabase Cloud (Auth, Realtime, Storage, PostGIS).
 
@@ -32,7 +37,7 @@ cp .env.example .env
 npm install
 ```
 
-Apply SQL in order from `database/supabase/migrations`, then functions in `database/supabase/functions`, then seeds.
+Apply SQL in order from `backend/database/supabase/migrations`, then functions in `backend/database/supabase/functions`, then seeds.
 
 Storage buckets to create in Supabase: `kyc-documents`, `profile-photos`.
 
@@ -51,7 +56,7 @@ npm run booking
 npm run payment
 npm run notification
 npm run safety
-cd services/matching && pip install -r requirements.txt && uvicorn main:app --port 8001
+cd backend/services/matching && pip install -r requirements.txt && uvicorn main:app --port 8001
 ```
 
 Mobile:
@@ -65,7 +70,7 @@ npm run mobile
 ```bash
 npm test --workspace=@rideshare/booking
 npm test --workspace=@rideshare/safety
-cd services/matching && pytest
+cd backend/services/matching && pytest
 ```
 
 Matching includes 15 route-combination cases (direct match, 3km / 14.9km / 15.1km detours, women-only, seats, trust, price, departed/cancelled, wrong direction, Krishnagiri and Gurugram intermediate stops).

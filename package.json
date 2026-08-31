@@ -3,11 +3,11 @@
   "version": "1.0.0",
   "private": true,
   "workspaces": [
-    "admin",
+    "console",
     "frontend",
-    "apps/mobile",
-    "services/*",
-    "shared/*"
+    "mobile",
+    "backend/services/*",
+    "backend/shared/*"
   ],
   "scripts": {
     "dev": "turbo run dev",
@@ -16,7 +16,7 @@
     "typecheck": "turbo run typecheck",
     "mobile": "npm run start --workspace=@rideshare/mobile",
     "mobile:tunnel": "npm run tunnel --workspace=@rideshare/mobile",
-    "admin": "npm run dev --workspace=@rideshare/admin",
+    "console": "npm run dev --workspace=@rideshare/console",
     "frontend": "npm run dev --workspace=@rideshare/frontend",
     "booking": "npm run dev --workspace=@rideshare/booking",
     "payment": "npm run dev --workspace=@rideshare/payment",

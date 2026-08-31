@@ -1,5 +1,5 @@
 {
-  "name": "@rideshare/admin",
+  "name": "@rideshare/console",
   "version": "1.0.0",
   "private": true,
   "type": "module",
