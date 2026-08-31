@@ -28,7 +28,7 @@ function readEnvFile(filePath) {
   return env;
 }
 
-const rootEnv = readEnvFile(path.resolve(__dirname, "../../.env"));
+const rootEnv = readEnvFile(path.resolve(__dirname, "../.env"));
 const localEnv = readEnvFile(path.resolve(__dirname, ".env"));
 const mapsKey =
   process.env.EXPO_PUBLIC_GOOGLE_MAPS_API_KEY ||

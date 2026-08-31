@@ -1,0 +1,57 @@
+{
+  "cli": {
+    "version": ">= 12.0.0",
+    "appVersionSource": "remote"
+  },
+  "build": {
+    "development": {
+      "developmentClient": true,
+      "distribution": "internal",
+      "android": { "buildType": "apk" },
+      "env": {
+        "EXPO_PUBLIC_SUPABASE_URL": "https://vxcnchtgvyegxhmyrfht.supabase.co",
+        "EXPO_PUBLIC_SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ4Y25jaHRndnllZ3hobXlyZmh0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA2NDI3OTEsImV4cCI6MjA5NjIxODc5MX0.q_NyPFq0qJ4e-rUDWPNDYktXGeQeNAknuJZau-2Q7TM",
+        "EXPO_PUBLIC_BOOKING_SERVICE_URL": "http://192.168.1.7:3002",
+        "EXPO_PUBLIC_MATCHING_SERVICE_URL": "http://192.168.1.7:8001",
+        "EXPO_PUBLIC_PAYMENT_SERVICE_URL": "http://192.168.1.7:3003",
+        "EXPO_PUBLIC_NOTIFICATION_SERVICE_URL": "http://192.168.1.7:3005",
+        "EXPO_PUBLIC_SAFETY_SERVICE_URL": "http://192.168.1.7:3006",
+        "EXPO_PUBLIC_CENTRIFUGO_WS_URL": "ws://192.168.1.7:8010/connection/websocket",
+        "EXPO_PUBLIC_GOOGLE_MAPS_API_KEY": "AIzaSyBDccVX1R2U8-UMKjSMd3jIutnHv-FbUJQ"
+      }
+    },
+    "preview": {
+      "distribution": "internal",
+      "android": { "buildType": "apk" },
+      "env": {
+        "EXPO_PUBLIC_SUPABASE_URL": "https://vxcnchtgvyegxhmyrfht.supabase.co",
+        "EXPO_PUBLIC_SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ4Y25jaHRndnllZ3hobXlyZmh0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA2NDI3OTEsImV4cCI6MjA5NjIxODc5MX0.q_NyPFq0qJ4e-rUDWPNDYktXGeQeNAknuJZau-2Q7TM",
+        "EXPO_PUBLIC_BOOKING_SERVICE_URL": "https://rideshare-booking.onrender.com",
+        "EXPO_PUBLIC_MATCHING_SERVICE_URL": "https://rideshare-matching.onrender.com",
+        "EXPO_PUBLIC_PAYMENT_SERVICE_URL": "https://rideshare-payment.onrender.com",
+        "EXPO_PUBLIC_NOTIFICATION_SERVICE_URL": "https://rideshare-notification.onrender.com",
+        "EXPO_PUBLIC_SAFETY_SERVICE_URL": "https://rideshare-safety.onrender.com",
+        "EXPO_PUBLIC_CENTRIFUGO_WS_URL": "wss://REPLACE-WITH-CENTRIFUGO-URL/connection/websocket",
+        "EXPO_PUBLIC_GOOGLE_MAPS_API_KEY": "AIzaSyBDccVX1R2U8-UMKjSMd3jIutnHv-FbUJQ"
+      }
+    },
+    "production": {
+      "autoIncrement": true,
+      "env": {
+        "EXPO_PUBLIC_SUPABASE_URL": "https://vxcnchtgvyegxhmyrfht.supabase.co",
+        "EXPO_PUBLIC_SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ4Y25jaHRndnllZ3hobXlyZmh0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA2NDI3OTEsImV4cCI6MjA5NjIxODc5MX0.q_NyPFq0qJ4e-rUDWPNDYktXGeQeNAknuJZau-2Q7TM",
+        "EXPO_PUBLIC_BOOKING_SERVICE_URL": "https://rideshare-booking.onrender.com",
+        "EXPO_PUBLIC_MATCHING_SERVICE_URL": "https://rideshare-matching.onrender.com",
+        "EXPO_PUBLIC_PAYMENT_SERVICE_URL": "https://rideshare-payment.onrender.com",
+        "EXPO_PUBLIC_NOTIFICATION_SERVICE_URL": "https://rideshare-notification.onrender.com",
+        "EXPO_PUBLIC_SAFETY_SERVICE_URL": "https://rideshare-safety.onrender.com",
+        "EXPO_PUBLIC_CENTRIFUGO_WS_URL": "wss://REPLACE-WITH-CENTRIFUGO-URL/connection/websocket",
+        "EXPO_PUBLIC_GOOGLE_MAPS_API_KEY": "AIzaSyBDccVX1R2U8-UMKjSMd3jIutnHv-FbUJQ",
+        "EXPO_PUBLIC_RAZORPAY_KEY_ID": "REPLACE-WITH-LIVE-RAZORPAY-KEY-ID"
+      }
+    }
+  },
+  "submit": {
+    "production": {}
+  }
+}
