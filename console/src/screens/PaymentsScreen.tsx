@@ -6,6 +6,7 @@ import { Pagination } from "../components/Pagination";
 import { DataTable } from "../components/DataTable";
 import { FilterBar } from "../components/FilterBar";
 import { ActionBanner } from "../components/ActionBanner";
+import { ActionMenu } from "../components/ActionMenu";
 import { liveOrMock, MOCK_PAYMENTS, paginate } from "../lib/mockData";
 
 interface AdminPayment {
@@ -122,14 +123,10 @@ export function PaymentsScreen() {
           {
             header: "Actions",
             align: "right",
-            wrap: true,
+            width: "64px",
             render: (payment) =>
               payment.status === "refunded" || payment.type === "refund" ? null : (
-                <div className="table-actions">
-                  <button type="button" className="table-action table-action-brand" onClick={() => void refund(payment)}>
-                    Refund
-                  </button>
-                </div>
+                <ActionMenu items={[{ label: "Refund", tone: "brand", onSelect: () => void refund(payment) }]} />
               ),
           },
         ]}

@@ -6,6 +6,7 @@ import { Badge } from "../components/Badge";
 import { Pagination } from "../components/Pagination";
 import { DataTable } from "../components/DataTable";
 import { FilterBar } from "../components/FilterBar";
+import { ActionMenu } from "../components/ActionMenu";
 import { liveOrMock, MOCK_KYC, paginate } from "../lib/mockData";
 
 type DocType = "aadhaar" | "dl" | "selfie";
@@ -190,21 +191,20 @@ export function KycScreen() {
           {
             header: "Actions",
             align: "right",
-            width: "120px",
-            wrap: true,
+            width: "64px",
             render: (row) => (
-              <div className="table-actions">
-                <button
-                  type="button"
-                  className="table-action table-action-brand"
-                  onClick={() => {
-                    setNote(row.review_note ?? "");
-                    setSelectedId(row.id);
-                  }}
-                >
-                  {row.status === "pending" || row.status === "failed" ? "Review" : "View"}
-                </button>
-              </div>
+              <ActionMenu
+                items={[
+                  {
+                    label: row.status === "pending" || row.status === "failed" ? "Review" : "View",
+                    tone: "brand",
+                    onSelect: () => {
+                      setNote(row.review_note ?? "");
+                      setSelectedId(row.id);
+                    },
+                  },
+                ]}
+              />
             ),
           },
         ]}

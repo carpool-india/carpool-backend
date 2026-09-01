@@ -6,6 +6,7 @@ import { Pagination } from "../components/Pagination";
 import { DataTable } from "../components/DataTable";
 import { FilterBar } from "../components/FilterBar";
 import { ActionBanner } from "../components/ActionBanner";
+import { ActionMenu } from "../components/ActionMenu";
 import { liveOrMock, MOCK_CONTACTS, MOCK_SAFETY, paginate } from "../lib/mockData";
 
 interface SafetyEvent {
@@ -169,19 +170,16 @@ export function SafetyScreen() {
           {
             header: "Actions",
             align: "right",
-            width: "160px",
-            wrap: true,
+            width: "64px",
             render: (event) => (
-              <div className="table-actions">
-                <button type="button" className="table-action" onClick={() => setSelected(event)}>
-                  Details
-                </button>
-                {event.resolved ? null : (
-                  <button type="button" onClick={() => void resolve(event.id)} className="table-action table-action-brand">
-                    Resolve
-                  </button>
-                )}
-              </div>
+              <ActionMenu
+                items={[
+                  { label: "Details", onSelect: () => setSelected(event) },
+                  ...(event.resolved
+                    ? []
+                    : [{ label: "Resolve", tone: "brand" as const, onSelect: () => void resolve(event.id) }]),
+                ]}
+              />
             ),
           },
         ]}

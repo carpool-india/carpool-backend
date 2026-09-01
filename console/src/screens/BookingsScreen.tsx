@@ -6,6 +6,7 @@ import { Pagination } from "../components/Pagination";
 import { DataTable } from "../components/DataTable";
 import { FilterBar } from "../components/FilterBar";
 import { ActionBanner } from "../components/ActionBanner";
+import { ActionMenu } from "../components/ActionMenu";
 import { liveOrMock, MOCK_BOOKINGS, paginate } from "../lib/mockData";
 
 interface AdminBooking {
@@ -114,17 +115,15 @@ export function BookingsScreen() {
           {
             header: "Actions",
             align: "right",
-            wrap: true,
+            width: "64px",
             render: (booking) =>
               booking.status === "cancelled" || booking.status === "completed" ? null : (
-                <div className="table-actions">
-                  <button type="button" className="table-action table-action-brand" onClick={() => void refund(booking)}>
-                    Refund
-                  </button>
-                  <button type="button" className="table-action" onClick={() => void cancel(booking)}>
-                    Cancel
-                  </button>
-                </div>
+                <ActionMenu
+                  items={[
+                    { label: "Refund", tone: "brand", onSelect: () => void refund(booking) },
+                    { label: "Cancel", onSelect: () => void cancel(booking) },
+                  ]}
+                />
               ),
           },
         ]}

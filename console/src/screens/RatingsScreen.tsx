@@ -5,6 +5,7 @@ import { Pagination } from "../components/Pagination";
 import { DataTable } from "../components/DataTable";
 import { FilterBar } from "../components/FilterBar";
 import { ActionBanner } from "../components/ActionBanner";
+import { ActionMenu } from "../components/ActionMenu";
 import { liveOrMock, MOCK_RATINGS, paginate } from "../lib/mockData";
 
 interface AdminRating {
@@ -83,14 +84,8 @@ export function RatingsScreen() {
           {
             header: "Actions",
             align: "right",
-            wrap: true,
-            render: (rating) => (
-              <div className="table-actions">
-                <button type="button" className="table-action" onClick={() => void hide(rating)}>
-                  Hide
-                </button>
-              </div>
-            ),
+            width: "64px",
+            render: (rating) => <ActionMenu items={[{ label: "Hide", onSelect: () => void hide(rating) }]} />,
           },
         ]}
         rows={query.data?.items ?? []}

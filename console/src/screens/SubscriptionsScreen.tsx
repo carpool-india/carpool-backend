@@ -6,6 +6,7 @@ import { Pagination } from "../components/Pagination";
 import { DataTable } from "../components/DataTable";
 import { FilterBar } from "../components/FilterBar";
 import { ActionBanner } from "../components/ActionBanner";
+import { ActionMenu } from "../components/ActionMenu";
 import { liveOrMock, MOCK_SUBSCRIPTIONS, paginate } from "../lib/mockData";
 
 interface AdminSubscription {
@@ -119,14 +120,10 @@ export function SubscriptionsScreen() {
           {
             header: "Actions",
             align: "right",
-            wrap: true,
+            width: "64px",
             render: (sub) =>
               sub.status === "cancelled" || sub.status === "expired" ? null : (
-                <div className="table-actions">
-                  <button type="button" className="table-action" onClick={() => void cancel(sub)}>
-                    Cancel
-                  </button>
-                </div>
+                <ActionMenu items={[{ label: "Cancel", onSelect: () => void cancel(sub) }]} />
               ),
           },
         ]}

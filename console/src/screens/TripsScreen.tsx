@@ -6,6 +6,7 @@ import { Pagination } from "../components/Pagination";
 import { DataTable } from "../components/DataTable";
 import { FilterBar } from "../components/FilterBar";
 import { ActionBanner } from "../components/ActionBanner";
+import { ActionMenu } from "../components/ActionMenu";
 import { liveOrMock, MOCK_TRIPS, paginate } from "../lib/mockData";
 
 interface AdminTrip {
@@ -121,14 +122,10 @@ export function TripsScreen() {
           {
             header: "Actions",
             align: "right",
-            wrap: true,
+            width: "64px",
             render: (trip) =>
               trip.status === "cancelled" || trip.status === "completed" ? null : (
-                <div className="table-actions">
-                  <button type="button" className="table-action" onClick={() => void cancel(trip)}>
-                    Cancel
-                  </button>
-                </div>
+                <ActionMenu items={[{ label: "Cancel", onSelect: () => void cancel(trip) }]} />
               ),
           },
         ]}

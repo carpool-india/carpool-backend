@@ -6,6 +6,7 @@ import { Pagination } from "../components/Pagination";
 import { DataTable } from "../components/DataTable";
 import { FilterBar } from "../components/FilterBar";
 import { ActionBanner } from "../components/ActionBanner";
+import { ActionMenu } from "../components/ActionMenu";
 import { liveOrMock, MOCK_VEHICLES, paginate } from "../lib/mockData";
 
 interface AdminVehicle {
@@ -116,17 +117,17 @@ export function VehiclesScreen() {
           {
             header: "Actions",
             align: "right",
-            wrap: true,
+            width: "64px",
             render: (row) => (
-              <div className="table-actions">
-                <button
-                  type="button"
-                  className={row.is_verified ? "table-action" : "table-action table-action-brand"}
-                  onClick={() => void setVerifiedFlag(row, !row.is_verified)}
-                >
-                  {row.is_verified ? "Revoke" : "Verify"}
-                </button>
-              </div>
+              <ActionMenu
+                items={[
+                  {
+                    label: row.is_verified ? "Revoke" : "Verify",
+                    tone: row.is_verified ? "default" : "brand",
+                    onSelect: () => void setVerifiedFlag(row, !row.is_verified),
+                  },
+                ]}
+              />
             ),
           },
         ]}
