@@ -16,7 +16,7 @@ export async function listSafetyEvents(
   const client = getAdminClient();
   let query = client
     .from("safety_events")
-    .select("*, users(name, phone)", { count: "exact" })
+    .select("*, users!safety_events_user_id_fkey(name, phone)", { count: "exact" })
     .order("created_at", { ascending: false });
   if (eventType) query = query.eq("event_type", eventType);
   if (severity) query = query.eq("severity", severity);

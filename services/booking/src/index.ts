@@ -2,6 +2,7 @@ import path from "node:path";
 import dotenv from "dotenv";
 dotenv.config({ path: path.resolve(__dirname, "../../../../.env"), override: true });
 import express, { type NextFunction, type Request, type Response } from "express";
+import "express-async-errors";
 import cors from "cors";
 import helmet from "helmet";
 import { loadEnv } from "./lib/env";
