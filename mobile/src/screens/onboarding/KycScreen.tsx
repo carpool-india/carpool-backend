@@ -95,12 +95,17 @@ export function KycScreen({ navigation }: { navigation: { replace: (name: string
       }
       setStepStatus((prev) => ({ ...prev, [docType]: "uploading" }));
       const blob = await (await fetch(result.assets[0].uri)).blob();
-      const path = `${user.id}/${docType}.jpg`;
-      const { error: uploadError } = await supabase.storage
-        .from("kyc-documents")
-        .upload(path, blob, { upsert: true, contentType: "image/jpeg" });
-      if (uploadError) {
-        throw uploadError;
+      const { uploadUrl, key } = await bookingPost<{ uploadUrl: string; key: string }>("/uploads/presign", {
+        target: "kyc",
+        docType,
+      });
+      const uploadRes = await fetch(uploadUrl, {
+        method: "PUT",
+        body: blob,
+        headers: { "Content-Type": "image/jpeg" },
+      });
+      if (!uploadRes.ok) {
+        throw new Error("Unable to upload document");
       }
       const txnId = `hv_${docType}_${Date.now()}`;
       await supabase.from("kyc_sessions").insert({
@@ -108,7 +113,7 @@ export function KycScreen({ navigation }: { navigation: { replace: (name: string
         document_type: docType,
         hyperverge_txn_id: txnId,
         status: "pending",
-        storage_path: path,
+        storage_path: key,
       });
       setStepStatus((prev) => ({ ...prev, [docType]: "verifying" }));
       const verifyResult = await bookingPost<{ verified: boolean; status: string }>("/kyc/verify", {

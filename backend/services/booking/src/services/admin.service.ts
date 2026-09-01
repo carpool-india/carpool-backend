@@ -1,5 +1,7 @@
 import { getAdminClient } from "../lib/supabase";
 import { HttpError } from "../lib/errors";
+import { presignDownload } from "../lib/r2";
+import { kycKey, type KycDocType as UploadKycDocType } from "./upload.service";
 
 function range(page: number, limit: number): [number, number] {
   const start = (page - 1) * limit;
@@ -42,14 +44,12 @@ export interface KycSessionRow {
   users: { id: string; name: string | null; phone: string; photo_url: string | null } | null;
 }
 
-async function signedPreviewUrl(storagePath: string | null, userId: string, docType: string): Promise<string | null> {
-  const client = getAdminClient();
-  const path = storagePath && storagePath.length > 0 ? storagePath : `${userId}/${docType}.jpg`;
-  const { data, error } = await client.storage.from("kyc-documents").createSignedUrl(path, 60 * 15);
-  if (error || !data?.signedUrl) {
+async function signedPreviewUrl(_storagePath: string | null, userId: string, docType: string): Promise<string | null> {
+  try {
+    return await presignDownload(kycKey(userId, docType as UploadKycDocType));
+  } catch {
     return null;
   }
-  return data.signedUrl;
 }
 
 export async function listKycSessions(
