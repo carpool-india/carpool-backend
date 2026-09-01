@@ -32,8 +32,11 @@ interface InboxItem {
   tripId?: string;
 }
 
+type InboxTab = "chats" | "alerts";
+
 export function InboxScreen({ navigation }: TabScreenProps<"InboxTab">) {
   const language = useAuthStore((state) => state.language);
+  const [tab, setTab] = useState<InboxTab>("chats");
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [chatPreviews, setChatPreviews] = useState<ChatPreview[]>([]);
   const [loadError, setLoadError] = useState(false);
@@ -57,7 +60,26 @@ export function InboxScreen({ navigation }: TabScreenProps<"InboxTab">) {
     }, [load])
   );
 
-  const messages = useMemo<InboxItem[]>(() => {
+  const chats = useMemo<InboxItem[]>(() => {
+    return chatPreviews
+      .map((preview) => {
+        const timestamp = new Date(preview.lastMessageAt).getTime();
+        return {
+          id: `chat-${preview.tripId}`,
+          title: `${preview.originName} → ${preview.destinationName}`,
+          body: preview.lastMessageSenderName
+            ? `${preview.lastMessageSenderName}: ${preview.lastMessageBody}`
+            : preview.lastMessageBody,
+          time: new Date(preview.lastMessageAt).toLocaleString("en-IN"),
+          timestamp,
+          tone: "chat" as const,
+          tripId: preview.tripId,
+        };
+      })
+      .sort((a, b) => b.timestamp - a.timestamp);
+  }, [chatPreviews]);
+
+  const alerts = useMemo<InboxItem[]>(() => {
     const fromBookings: InboxItem[] = bookings.map((booking) => {
       const route = booking.trip ? `${booking.trip.originName} → ${booking.trip.destinationName}. ` : "";
       const createdAt = new Date(booking.createdAt).getTime();
@@ -74,21 +96,6 @@ export function InboxScreen({ navigation }: TabScreenProps<"InboxTab">) {
       };
     });
 
-    const fromChats: InboxItem[] = chatPreviews.map((preview) => {
-      const timestamp = new Date(preview.lastMessageAt).getTime();
-      return {
-        id: `chat-${preview.tripId}`,
-        title: `${preview.originName} → ${preview.destinationName}`,
-        body: preview.lastMessageSenderName
-          ? `${preview.lastMessageSenderName}: ${preview.lastMessageBody}`
-          : preview.lastMessageBody,
-        time: new Date(preview.lastMessageAt).toLocaleString("en-IN"),
-        timestamp,
-        tone: "chat",
-        tripId: preview.tripId,
-      };
-    });
-
     const safetyItem: InboxItem = {
       id: "safety",
       title: "Safety is on for every ride",
@@ -98,56 +105,74 @@ export function InboxScreen({ navigation }: TabScreenProps<"InboxTab">) {
       tone: "safety",
     };
 
-    return [safetyItem, ...fromChats, ...fromBookings].sort((a, b) => b.timestamp - a.timestamp);
-  }, [bookings, chatPreviews]);
+    return [safetyItem, ...fromBookings].sort((a, b) => b.timestamp - a.timestamp);
+  }, [bookings]);
+
+  const active = tab === "chats" ? chats : alerts;
 
   return (
     <Screen variant="plain">
       <Text className="px-5 pt-3 text-3xl font-extrabold text-slate-900">{t(language, "tabInbox")}</Text>
+      <View className="mx-5 mt-4 flex-row rounded-full bg-white p-1" style={softShadow}>
+        <Segment active={tab === "chats"} label={t(language, "inboxChats")} onPress={() => setTab("chats")} />
+        <Segment active={tab === "alerts"} label={t(language, "inboxAlerts")} onPress={() => setTab("alerts")} />
+      </View>
       {loadError ? (
         <ErrorRetry language={language} onRetry={load} />
       ) : (
-      <FlatList
-        className="mt-4 flex-1 px-4"
-        data={messages}
-        keyExtractor={(item) => item.id}
-        contentContainerStyle={{ paddingBottom: 16 }}
-        {...containedScrollProps}
-        ListEmptyComponent={<Text className="mt-10 text-center text-slate-500">{t(language, "inboxEmpty")}</Text>}
-        renderItem={({ item }) => (
-          <Pressable
-            disabled={item.tone !== "chat"}
-            onPress={() => {
-              if (item.tripId) {
-                navigateRoot(navigation, "Chat", { tripId: item.tripId });
-              }
-            }}
-            style={softShadow}
-            className="mb-3 flex-row rounded-[24px] bg-white p-4"
-          >
-            <View
-              className={`h-11 w-11 items-center justify-center rounded-2xl ${
-                item.tone === "safety" ? "bg-red-50" : item.tone === "chat" ? "bg-brand-light" : "bg-slate-100"
-              }`}
+        <FlatList
+          className="mt-3 flex-1 px-4"
+          data={active}
+          keyExtractor={(item) => item.id}
+          contentContainerStyle={{ paddingBottom: 16 }}
+          {...containedScrollProps}
+          ListEmptyComponent={
+            <Text className="mt-10 text-center text-slate-500">
+              {t(language, tab === "chats" ? "inboxChatsEmpty" : "inboxAlertsEmpty")}
+            </Text>
+          }
+          renderItem={({ item }) => (
+            <Pressable
+              disabled={item.tone !== "chat"}
+              onPress={() => {
+                if (item.tripId) {
+                  navigateRoot(navigation, "Chat", { tripId: item.tripId });
+                }
+              }}
+              style={softShadow}
+              className="mb-3 flex-row rounded-[24px] bg-white p-4"
             >
-              <Ionicons
-                name={item.tone === "safety" ? "shield-checkmark" : item.tone === "chat" ? "chatbubble-ellipses" : "receipt-outline"}
-                size={20}
-                color={item.tone === "safety" ? "#DC2626" : item.tone === "chat" ? "#0F766E" : "#475569"}
-              />
-            </View>
-            <View className="ml-3 flex-1">
-              <Text className="font-extrabold text-slate-900">{item.title}</Text>
-              <Text className="mt-1 text-sm leading-5 text-slate-600" numberOfLines={2}>
-                {item.body}
-              </Text>
-              <Text className="mt-1.5 text-xs font-medium text-slate-400">{item.time}</Text>
-            </View>
-            {item.tone === "chat" ? <Ionicons name="chevron-forward" size={16} color="#94A3B8" /> : null}
-          </Pressable>
-        )}
-      />
+              <View
+                className={`h-11 w-11 items-center justify-center rounded-2xl ${
+                  item.tone === "safety" ? "bg-red-50" : item.tone === "chat" ? "bg-brand-light" : "bg-slate-100"
+                }`}
+              >
+                <Ionicons
+                  name={item.tone === "safety" ? "shield-checkmark" : item.tone === "chat" ? "chatbubble-ellipses" : "receipt-outline"}
+                  size={20}
+                  color={item.tone === "safety" ? "#DC2626" : item.tone === "chat" ? "#0F766E" : "#475569"}
+                />
+              </View>
+              <View className="ml-3 flex-1">
+                <Text className="font-extrabold text-slate-900">{item.title}</Text>
+                <Text className="mt-1 text-sm leading-5 text-slate-600" numberOfLines={2}>
+                  {item.body}
+                </Text>
+                <Text className="mt-1.5 text-xs font-medium text-slate-400">{item.time}</Text>
+              </View>
+              {item.tone === "chat" ? <Ionicons name="chevron-forward" size={16} color="#94A3B8" /> : null}
+            </Pressable>
+          )}
+        />
       )}
     </Screen>
+  );
+}
+
+function Segment({ active, label, onPress }: { active: boolean; label: string; onPress: () => void }) {
+  return (
+    <Pressable onPress={onPress} className={`flex-1 rounded-full py-2.5 ${active ? "bg-brand" : ""}`}>
+      <Text className={`text-center text-sm font-bold ${active ? "text-white" : "text-slate-500"}`}>{label}</Text>
+    </Pressable>
   );
 }

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { ActivityIndicator, Platform, Pressable, Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import * as ImagePicker from "expo-image-picker";
@@ -24,6 +24,40 @@ export function KycScreen({ navigation }: { navigation: { replace: (name: string
     selfie: "idle",
   });
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!user) {
+      return;
+    }
+    void supabase
+      .from("kyc_sessions")
+      .select("document_type, status, created_at")
+      .eq("user_id", user.id)
+      .order("created_at", { ascending: false })
+      .then(({ data }) => {
+        if (!data) {
+          return;
+        }
+        const latestByDoc: Partial<Record<DocType, string>> = {};
+        for (const row of data as { document_type: DocType; status: string }[]) {
+          if (!(row.document_type in latestByDoc)) {
+            latestByDoc[row.document_type] = row.status;
+          }
+        }
+        setStepStatus((prev) => {
+          const next = { ...prev };
+          (Object.keys(latestByDoc) as DocType[]).forEach((docType) => {
+            const status = latestByDoc[docType];
+            if (status === "pending") {
+              next[docType] = "pending";
+            } else if (status === "failed" || status === "rejected") {
+              next[docType] = "failed";
+            }
+          });
+          return next;
+        });
+      });
+  }, [user?.id]);
 
   async function upload(docType: DocType) {
     if (!user) {

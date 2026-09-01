@@ -24,12 +24,12 @@ export function Screen({ children, scroll = false, variant = "plain", contentCon
     <ScrollView
       {...containedScrollProps}
       style={styles.flex}
-      contentContainerStyle={[{ paddingBottom: 16 }, contentContainerStyle]}
+      contentContainerStyle={[{ paddingBottom: 16 + insets.bottom }, contentContainerStyle]}
     >
       {children}
     </ScrollView>
   ) : (
-    <View style={styles.flex}>{children}</View>
+    <View style={[styles.flex, { paddingBottom: insets.bottom }]}>{children}</View>
   );
 
   return (
