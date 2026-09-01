@@ -52,30 +52,109 @@ async function signedPreviewUrl(_storagePath: string | null, userId: string, doc
   }
 }
 
+export interface KycUserGroup {
+  user: { id: string; name: string | null; phone: string; photo_url: string | null };
+  documents: Array<Omit<KycSessionRow, "users">>;
+}
+
+// kyc_sessions is scanned (not paginated) to find which distinct users match the
+// filters, then that user list is paginated -- a user can otherwise have their
+// documents split across pages. Fine at this app's KYC volume; would need a
+// dedicated grouping RPC if that ever stops being true.
+const USER_SCAN_LIMIT = 1000;
+
 export async function listKycSessions(
   page: number,
   limit: number,
   status?: string,
   docType?: string,
   userId?: string
-) {
+): Promise<{ items: KycUserGroup[]; total: number }> {
   const client = getAdminClient();
-  let query = client
+  let matchQuery = client
+    .from("kyc_sessions")
+    .select("user_id, created_at")
+    .order("created_at", { ascending: false })
+    .limit(USER_SCAN_LIMIT);
+  if (status) matchQuery = matchQuery.eq("status", status);
+  if (docType) matchQuery = matchQuery.eq("document_type", docType);
+  if (userId) matchQuery = matchQuery.eq("user_id", userId);
+  const { data: matching, error: matchError } = await matchQuery;
+  if (matchError) {
+    throw new HttpError(400, "bad_request", matchError.message);
+  }
+
+  const orderedUserIds: string[] = [];
+  const seen = new Set<string>();
+  for (const row of (matching ?? []) as Array<{ user_id: string }>) {
+    if (!seen.has(row.user_id)) {
+      seen.add(row.user_id);
+      orderedUserIds.push(row.user_id);
+    }
+  }
+
+  const total = orderedUserIds.length;
+  const [start, end] = range(page, limit);
+  const pageUserIds = orderedUserIds.slice(start, end + 1);
+  if (pageUserIds.length === 0) {
+    return { items: [], total };
+  }
+
+  const { data: sessions, error: sessionsError } = await client
     .from("kyc_sessions")
     .select(
-      "id, user_id, document_type, status, storage_path, created_at, reviewed_at, review_note, users!kyc_sessions_user_id_fkey(id, name, phone, photo_url)",
-      { count: "exact" }
+      "id, user_id, document_type, status, storage_path, created_at, reviewed_at, review_note, users!kyc_sessions_user_id_fkey(id, name, phone, photo_url)"
     )
+    .in("user_id", pageUserIds)
     .order("created_at", { ascending: false });
-  if (status) query = query.eq("status", status);
-  if (docType) query = query.eq("document_type", docType);
-  if (userId) query = query.eq("user_id", userId);
-  const [start, end] = range(page, limit);
-  const { data, error, count } = await query.range(start, end);
+  if (sessionsError) {
+    throw new HttpError(400, "bad_request", sessionsError.message);
+  }
+
+  const grouped = new Map<string, KycUserGroup>();
+  for (const row of (sessions ?? []) as unknown as KycSessionRow[]) {
+    if (!grouped.has(row.user_id)) {
+      grouped.set(row.user_id, {
+        user: row.users ?? { id: row.user_id, name: null, phone: "", photo_url: null },
+        documents: [],
+      });
+    }
+    const { users: _users, ...doc } = row;
+    grouped.get(row.user_id)!.documents.push(doc);
+  }
+
+  const items = pageUserIds.map((id) => grouped.get(id)).filter((v): v is KycUserGroup => Boolean(v));
+  return { items, total };
+}
+
+export async function getKycSessionsForUser(userId: string): Promise<KycUserGroup> {
+  const client = getAdminClient();
+  const { data, error } = await client
+    .from("kyc_sessions")
+    .select(
+      "id, user_id, document_type, status, storage_path, created_at, reviewed_at, review_note, users!kyc_sessions_user_id_fkey(id, name, phone, photo_url)"
+    )
+    .eq("user_id", userId)
+    .order("document_type", { ascending: true })
+    .order("created_at", { ascending: false });
   if (error) {
     throw new HttpError(400, "bad_request", error.message);
   }
-  return { items: (data ?? []) as unknown as KycSessionRow[], total: count ?? 0 };
+  const rows = (data ?? []) as unknown as KycSessionRow[];
+  if (rows.length === 0) {
+    throw new HttpError(404, "not_found", "No KYC documents found for this user");
+  }
+  const documentsWithPreview = await Promise.all(
+    rows.map(async (row) => {
+      const { users: _users, ...doc } = row;
+      const previewUrl = await signedPreviewUrl(row.storage_path, row.user_id, row.document_type);
+      return { ...doc, previewUrl };
+    })
+  );
+  return {
+    user: rows[0].users ?? { id: userId, name: null, phone: "", photo_url: null },
+    documents: documentsWithPreview,
+  };
 }
 
 export async function getKycSession(id: string) {
