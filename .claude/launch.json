@@ -6,6 +6,12 @@
       "runtimeExecutable": "npm",
       "runtimeArgs": ["run", "dev", "--workspace=@rideshare/frontend"],
       "port": 5181
+    },
+    {
+      "name": "console",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "dev", "--workspace=@rideshare/console"],
+      "port": 5180
     }
   ]
 }

@@ -4,6 +4,7 @@ import { Ionicons } from "@expo/vector-icons";
 import type { ComponentProps } from "react";
 import { TrustScoreBadge } from "../../components/TrustScoreBadge";
 import { Avatar } from "../../components/ui/Avatar";
+import { DeleteAccountSheet } from "../../components/DeleteAccountSheet";
 import { t } from "../../i18n/translations";
 import { supabase } from "../../lib/supabase";
 import { navigateRoot } from "../../navigation/navigateRoot";
@@ -22,8 +23,16 @@ export function ProfileScreen({ navigation }: TabScreenProps<"ProfileTab">) {
   const signOut = useAuthStore((state) => state.signOut);
   const { pick, uploading } = useProfilePhoto();
   const [photoError, setPhotoError] = useState<string | null>(null);
+  const [showDelete, setShowDelete] = useState(false);
 
   async function logout() {
+    await supabase.auth.signOut();
+    signOut();
+    navigateRoot(navigation, "Login");
+  }
+
+  async function onAccountDeleted() {
+    setShowDelete(false);
     await supabase.auth.signOut();
     signOut();
     navigateRoot(navigation, "Login");
@@ -128,6 +137,15 @@ export function ProfileScreen({ navigation }: TabScreenProps<"ProfileTab">) {
         <View className="mx-4 mt-5">
           <GhostButton label="Sign out" onPress={() => void logout()} />
         </View>
+        <Pressable onPress={() => setShowDelete(true)} className="mx-4 mt-3 items-center py-2">
+          <Text className="text-sm font-semibold text-sos">{t(language, "deleteAccountRow")}</Text>
+        </Pressable>
+        <DeleteAccountSheet
+          visible={showDelete}
+          onClose={() => setShowDelete(false)}
+          onDeleted={() => void onAccountDeleted()}
+          language={language}
+        />
     </Screen>
   );
 }
