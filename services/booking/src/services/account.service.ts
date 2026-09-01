@@ -1,9 +1,11 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { badRequest } from "../lib/errors";
+import { deleteObjects } from "../lib/r2";
 import { getAdminClient } from "../lib/supabase";
 import { resolveAppUserId } from "./trip.service";
 import { cancelBooking } from "./booking.service";
 import { cancelTrip } from "./trip.service";
+import { kycKey, profileKey } from "./upload.service";
 
 const ACTIVE_BOOKING_STATUSES = ["pending_approval", "pending", "confirmed"];
 const ACTIVE_TRIP_STATUSES = ["active", "in_progress"];
@@ -57,10 +59,12 @@ export async function deleteAccount(
 
   const admin = getAdminClient();
 
-  await admin.storage
-    .from("kyc-documents")
-    .remove([`${userId}/aadhaar.jpg`, `${userId}/dl.jpg`, `${userId}/selfie.jpg`]);
-  await admin.storage.from("profile-photos").remove([`${userId}/profile.jpg`]);
+  await deleteObjects([
+    kycKey(userId, "aadhaar"),
+    kycKey(userId, "dl"),
+    kycKey(userId, "selfie"),
+    profileKey(userId),
+  ]);
 
   await admin.from("kyc_sessions").delete().eq("user_id", userId);
   await admin.from("emergency_contacts").delete().eq("user_id", userId);

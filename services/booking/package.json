@@ -11,6 +11,8 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.1123.0",
+    "@aws-sdk/s3-request-presigner": "^3.1123.0",
     "@rideshare/types": "*",
     "@rideshare/utils": "*",
     "@supabase/supabase-js": "^2.45.0",
