@@ -1,8 +1,26 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { loadEnv } from "../lib/env";
+import { pushToUsers } from "../lib/push";
+import { getAdminClient } from "../lib/supabase";
 import { resolveAppUserId } from "./trip.service";
 
 export type KycDocType = "aadhaar" | "dl" | "selfie";
+
+const DOC_LABEL: Record<KycDocType, string> = {
+  aadhaar: "Aadhaar",
+  dl: "driving licence",
+  selfie: "selfie",
+};
+
+async function notifyAdminsOfPendingKyc(userId: string, docType: KycDocType): Promise<void> {
+  const admin = getAdminClient();
+  const { data: admins } = await admin.from("device_tokens").select("user_id, users!inner(is_admin)").eq("users.is_admin", true);
+  const adminUserIds = Array.from(new Set(((admins ?? []) as Array<{ user_id: string }>).map((row) => row.user_id)));
+  await pushToUsers(adminUserIds, "KYC review needed", `New ${DOC_LABEL[docType]} document awaiting manual review`, {
+    type: "kyc_review",
+    userId,
+  });
+}
 
 export async function verifyKycDocument(
   client: SupabaseClient,
@@ -16,6 +34,7 @@ export async function verifyKycDocument(
   let status = "failed";
 
   if (!env.HYPERVERGE_APP_ID || !env.HYPERVERGE_APP_KEY) {
+    void notifyAdminsOfPendingKyc(userId, input.docType).catch(() => undefined);
     return { verified: false, status: "pending_review" };
   } else {
     try {
