@@ -18,7 +18,11 @@ const app = express();
 
 app.set("trust proxy", 1);
 app.use(helmet());
-app.use(cors());
+// CORS_ORIGIN unset -> permissive (current/dev behavior). Set it once the console's
+// domain is known to restrict browser access to just that origin; mobile isn't
+// subject to CORS so this never affects the app.
+const corsOrigin = process.env.CORS_ORIGIN;
+app.use(cors(corsOrigin ? { origin: corsOrigin.split(",").map((value) => value.trim()) } : undefined));
 app.use(express.json({ limit: "1mb" }));
 
 app.get("/health", (_req, res) => {

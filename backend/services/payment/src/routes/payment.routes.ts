@@ -182,7 +182,10 @@ async function notifyBookingPaid(client: ReturnType<typeof createUserClient>, bo
     : "Verified vehicle";
   await fetch(`${env.NOTIFICATION_SERVICE_URL ?? "http://localhost:3005"}/whatsapp/booking`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: {
+      "Content-Type": "application/json",
+      ...(process.env.INTERNAL_SERVICE_SECRET ? { "x-internal-secret": process.env.INTERNAL_SERVICE_SECRET } : {}),
+    },
     body: JSON.stringify({
       phone: passenger.phone,
       passengerName: passenger.name ?? "Passenger",

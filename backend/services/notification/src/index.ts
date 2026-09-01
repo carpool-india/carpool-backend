@@ -19,7 +19,28 @@ const app = express();
 // so rate limiting keys off the real client IP (X-Forwarded-For) instead of the proxy.
 app.set("trust proxy", 1);
 app.use(helmet());
-app.use(cors());
+// CORS_ORIGIN unset -> permissive (current/dev behavior). Set it once the console's
+// domain is known to restrict browser access to just that origin; mobile isn't
+// subject to CORS so this never affects the app.
+const corsOrigin = process.env.CORS_ORIGIN;
+app.use(cors(corsOrigin ? { origin: corsOrigin.split(",").map((value) => value.trim()) } : undefined));
+
+// /push, /sms, /whatsapp/booking, and /sos are meant to be called by other backend
+// services only — never directly by the mobile app. If INTERNAL_SERVICE_SECRET is
+// set, require it on those routes so this service can't be used as a free SMS/push
+// relay by anyone who finds the URL.
+const internalServiceSecret = process.env.INTERNAL_SERVICE_SECRET;
+function requireInternalSecret(req: Request, res: Response, next: NextFunction): void {
+  if (!internalServiceSecret) {
+    next();
+    return;
+  }
+  if (req.header("x-internal-secret") !== internalServiceSecret) {
+    res.status(401).json({ error: "unauthorized", message: "Missing or invalid internal service credential" });
+    return;
+  }
+  next();
+}
 app.use((req, res, next) => {
   const start = Date.now();
   res.on("finish", () => {
@@ -130,7 +151,7 @@ app.post("/push/register", async (req, res, next) => {
   }
 });
 
-app.post("/push", async (req, res, next) => {
+app.post("/push", requireInternalSecret, async (req, res, next) => {
   try {
     const input = pushSchema.parse(req.body);
     const id = await sendPush(input);
@@ -140,7 +161,7 @@ app.post("/push", async (req, res, next) => {
   }
 });
 
-app.post("/sms", async (req, res, next) => {
+app.post("/sms", requireInternalSecret, async (req, res, next) => {
   try {
     const input = smsSchema.parse(req.body);
     await sendSms(input.phone, input.message);
@@ -150,7 +171,7 @@ app.post("/sms", async (req, res, next) => {
   }
 });
 
-app.post("/whatsapp/booking", async (req, res, next) => {
+app.post("/whatsapp/booking", requireInternalSecret, async (req, res, next) => {
   try {
     const input = bookingCardSchema.parse(req.body);
     await sendBookingCard(input.phone, input);
@@ -160,7 +181,7 @@ app.post("/whatsapp/booking", async (req, res, next) => {
   }
 });
 
-app.post("/sos", async (req, res, next) => {
+app.post("/sos", requireInternalSecret, async (req, res, next) => {
   try {
     const input = sosSchema.parse(req.body);
     const result = await dispatchSos(input);

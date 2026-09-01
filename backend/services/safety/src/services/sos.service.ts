@@ -53,7 +53,10 @@ export async function triggerSos(
   const env = loadEnv();
   const response = await fetch(`${env.NOTIFICATION_SERVICE_URL}/sos`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: {
+      "Content-Type": "application/json",
+      ...(process.env.INTERNAL_SERVICE_SECRET ? { "x-internal-secret": process.env.INTERNAL_SERVICE_SECRET } : {}),
+    },
     body: JSON.stringify({
       userName: user.name ?? "Rider",
       userPhone: user.phone,
