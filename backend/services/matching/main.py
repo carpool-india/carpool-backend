@@ -8,8 +8,12 @@ from fastapi.middleware.cors import CORSMiddleware
 
 
 def _load_root_env() -> None:
-    env_path = Path(__file__).resolve().parents[3] / ".env"
-    if not env_path.is_file():
+    # Best-effort local-dev convenience only: walk up from this file looking
+    # for a .env, however many levels that takes (monorepo, standalone repo,
+    # or none at all inside a Docker container, where env vars come from the
+    # platform directly and no .env file exists).
+    env_path = next((p / ".env" for p in Path(__file__).resolve().parents if (p / ".env").is_file()), None)
+    if env_path is None:
         return
     for raw in env_path.read_text(encoding="utf-8").splitlines():
         line = raw.strip()

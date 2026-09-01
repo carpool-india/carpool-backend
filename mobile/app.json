@@ -52,6 +52,14 @@
         }
       ],
       "@react-native-community/datetimepicker"
-    ]
+    ],
+    "extra": {
+      "googleMapsApiKey": "AIzaSyBDccVX1R2U8-UMKjSMd3jIutnHv-FbUJQ",
+      "EXPO_PUBLIC_GOOGLE_MAPS_API_KEY": "AIzaSyBDccVX1R2U8-UMKjSMd3jIutnHv-FbUJQ",
+      "eas": {
+        "projectId": "2df2c732-c0f8-411f-821e-5a538d4f3fb0"
+      }
+    },
+    "owner": "carpoolindia"
   }
 }
