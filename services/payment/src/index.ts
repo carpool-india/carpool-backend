@@ -1,6 +1,6 @@
 import path from "node:path";
 import dotenv from "dotenv";
-dotenv.config({ path: path.resolve(__dirname, "../../../.env"), override: true });
+dotenv.config({ path: path.resolve(__dirname, "../../../../.env"), override: true });
 import express, { type NextFunction, type Request, type Response } from "express";
 import cors from "cors";
 import helmet from "helmet";
@@ -24,7 +24,11 @@ const env = process.env.NODE_ENV === "test" ? null : loadEnv();
 const app = express();
 
 app.use(helmet());
-app.use(cors());
+// CORS_ORIGIN unset -> permissive (current/dev behavior). Set it once the console's
+// domain is known to restrict browser access to just that origin; mobile isn't
+// subject to CORS so this never affects the app.
+const corsOrigin = process.env.CORS_ORIGIN;
+app.use(cors(corsOrigin ? { origin: corsOrigin.split(",").map((value) => value.trim()) } : undefined));
 app.post(
   "/webhooks/razorpay",
   express.raw({ type: "application/json" }),
