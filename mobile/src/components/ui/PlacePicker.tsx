@@ -268,6 +268,8 @@ export function PlacePicker({
                 placeholderTextColor="#94A3B8"
                 autoFocus
                 autoCorrect={false}
+                textAlignVertical="center"
+                style={{ includeFontPadding: false }}
                 className="ml-2 flex-1 py-3.5 text-[16px] font-semibold text-slate-900"
               />
               {query ? (
