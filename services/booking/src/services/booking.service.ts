@@ -2,6 +2,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Booking, CreateBookingInput, PriceBreakdown } from "@rideshare/types";
 import { parseGeoPoint, toGeoJsonPoint } from "@rideshare/utils";
 import { badRequest, conflict, forbidden, notFound } from "../lib/errors";
+import { pushToUser, pushToUsers } from "../lib/push";
 import { evaluateCancellationBond, hoursUntil } from "./cancellationBond.service";
 import { buildPriceBreakdown } from "./invoice.service";
 import { getTrip, resolveAppUserId } from "./trip.service";
@@ -93,6 +94,15 @@ export async function createBooking(
     }
   }
 
+  if (initialStatus === "pending_approval") {
+    void pushToUser(
+      trip.driverId,
+      "New booking request",
+      `${input.seatsBooked} seat(s) requested for ${trip.originName} → ${trip.destinationName}`,
+      { type: "booking_request", tripId: input.tripId }
+    ).catch(() => undefined);
+  }
+
   return { booking: mapBooking(data, input.pickupPoint, input.dropoffPoint), breakdown };
 }
 
@@ -133,6 +143,12 @@ export async function respondToBooking(
     if (error || !data) {
       throw badRequest(error?.message ?? "Unable to reject booking");
     }
+    void pushToUser(
+      booking.passengerId,
+      "Booking declined",
+      `Your request for ${trip.originName} → ${trip.destinationName} was declined`,
+      { type: "booking_rejected", bookingId }
+    ).catch(() => undefined);
     return mapBooking(data);
   }
 
@@ -155,6 +171,12 @@ export async function respondToBooking(
   if (error || !data) {
     throw badRequest(error?.message ?? "Unable to accept booking");
   }
+  void pushToUser(
+    booking.passengerId,
+    "Booking accepted",
+    `Complete payment to confirm your seat on ${trip.originName} → ${trip.destinationName}`,
+    { type: "booking_accepted", bookingId }
+  ).catch(() => undefined);
   return mapBooking(data);
 }
 
@@ -214,6 +236,14 @@ export async function cancelBooking(
     }
   }
 
+  const otherPartyId = cancelledBy === "passenger" ? trip.driverId : booking.passengerId;
+  void pushToUser(
+    otherPartyId,
+    "Booking cancelled",
+    `${cancelledBy === "passenger" ? "Passenger" : "Driver"} cancelled ${trip.originName} → ${trip.destinationName}. ${reason}`,
+    { type: "booking_cancelled", tripId: booking.tripId }
+  ).catch(() => undefined);
+
   return {
     booking: mapBooking(data),
     bondForfeited: bond.forfeited,
@@ -268,6 +298,18 @@ export async function startTrip(
   if (error) {
     throw badRequest(error.message);
   }
+
+  const { data: confirmedBookings } = await client
+    .from("bookings")
+    .select("passenger_id")
+    .eq("trip_id", trip.id)
+    .eq("status", "confirmed");
+  const passengerIds = ((confirmedBookings ?? []) as Array<{ passenger_id: string }>).map((row) => row.passenger_id);
+  void pushToUsers(passengerIds, "Trip started", `Your driver has started the trip to ${trip.destinationName}`, {
+    type: "trip_started",
+    tripId: trip.id,
+  }).catch(() => undefined);
+
   return booking;
 }
 
