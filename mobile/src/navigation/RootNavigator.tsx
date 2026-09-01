@@ -1,4 +1,5 @@
 import { useEffect } from "react";
+import * as Notifications from "expo-notifications";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { LoginScreen } from "../screens/auth/LoginScreen";
 import { OtpVerifyScreen } from "../screens/auth/OtpVerifyScreen";
@@ -23,6 +24,7 @@ import { registerFcmToken } from "../services/fcm";
 import { useAuthStore } from "../store/authStore";
 import { HeaderBackButton } from "../components/ui/HeaderBackButton";
 import { MainTabs } from "./TabNavigator";
+import { navigateFromNotification } from "./navigationRef";
 import type { RootStackParamList } from "./types";
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -49,6 +51,13 @@ export function RootNavigator() {
       void registerFcmToken();
     }
   }, [token]);
+
+  useEffect(() => {
+    const sub = Notifications.addNotificationResponseReceivedListener((response) => {
+      navigateFromNotification(response.notification.request.content.data as Record<string, string>);
+    });
+    return () => sub.remove();
+  }, []);
 
   return (
     <Stack.Navigator

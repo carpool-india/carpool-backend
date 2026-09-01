@@ -2,6 +2,8 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import jwt from "jsonwebtoken";
 import { loadEnv } from "../lib/env";
 import { badRequest, forbidden } from "../lib/errors";
+import { pushToUsers } from "../lib/push";
+import { getAdminClient } from "../lib/supabase";
 import { resolveAppUserId } from "./trip.service";
 
 export interface ChatMessage {
@@ -167,5 +169,32 @@ export async function sendMessage(
     }),
   }).catch(() => undefined);
 
+  void notifyTripPartyOfMessage(tripId, appUserId, message.senderName, message.body).catch(() => undefined);
+
   return message;
+}
+
+async function notifyTripPartyOfMessage(
+  tripId: string,
+  senderId: string,
+  senderName: string | null,
+  body: string
+): Promise<void> {
+  const admin = getAdminClient();
+  const [{ data: trip }, { data: bookings }] = await Promise.all([
+    admin.from("trips").select("driver_id").eq("id", tripId).maybeSingle(),
+    admin.from("bookings").select("passenger_id").eq("trip_id", tripId).eq("status", "confirmed"),
+  ]);
+
+  const recipientIds = new Set<string>();
+  if (trip?.driver_id) {
+    recipientIds.add(trip.driver_id as string);
+  }
+  for (const booking of (bookings ?? []) as Array<{ passenger_id: string }>) {
+    recipientIds.add(booking.passenger_id);
+  }
+  recipientIds.delete(senderId);
+
+  const preview = body.length > 80 ? `${body.slice(0, 77)}...` : body;
+  await pushToUsers(Array.from(recipientIds), senderName ?? "New message", preview, { type: "chat", tripId });
 }
