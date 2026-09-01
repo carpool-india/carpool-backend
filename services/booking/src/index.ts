@@ -13,6 +13,7 @@ import { adminRouter } from "./routes/admin.routes";
 import { geoRouter } from "./routes/geo.routes";
 import { chatRouter } from "./routes/chat.routes";
 import { trustRouter } from "./routes/trust.routes";
+import { accountRouter } from "./routes/account.routes";
 
 const app = express();
 
@@ -36,6 +37,7 @@ app.use("/geo", geoRouter);
 app.use("/admin", adminRouter);
 app.use("/chat", chatRouter);
 app.use("/trust", trustRouter);
+app.use("/account", accountRouter);
 
 app.use((error: unknown, _req: Request, res: Response, _next: NextFunction) => {
   if (error instanceof HttpError) {
