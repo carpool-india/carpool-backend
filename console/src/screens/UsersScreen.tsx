@@ -7,6 +7,7 @@ import { Pagination } from "../components/Pagination";
 import { DataTable } from "../components/DataTable";
 import { FilterBar } from "../components/FilterBar";
 import { ActionBanner } from "../components/ActionBanner";
+import { ActionMenu } from "../components/ActionMenu";
 import { liveOrMock, MOCK_USERS, paginate } from "../lib/mockData";
 
 interface AdminUser {
@@ -155,23 +156,20 @@ export function UsersScreen() {
           {
             header: "Actions",
             align: "right",
-            width: "240px",
-            wrap: true,
+            width: "64px",
             render: (user) => (
-              <div className="table-actions">
-                <button type="button" onClick={() => navigate(`/kyc?userId=${user.id}`)} className="table-action table-action-brand">
-                  Documents
-                </button>
-                <button type="button" onClick={() => void flagUser(user)} className="table-action">
-                  Flag
-                </button>
-                <button onClick={() => void toggleAdmin(user)} className="table-action">
-                  {user.is_admin ? "Revoke admin" : "Make admin"}
-                </button>
-                <button onClick={() => void toggleActive(user)} className="table-action">
-                  {user.is_active ? "Deactivate" : "Reactivate"}
-                </button>
-              </div>
+              <ActionMenu
+                items={[
+                  { label: "Documents", tone: "brand", onSelect: () => navigate(`/kyc?userId=${user.id}`) },
+                  { label: "Flag", onSelect: () => void flagUser(user) },
+                  { label: user.is_admin ? "Revoke admin" : "Make admin", onSelect: () => void toggleAdmin(user) },
+                  {
+                    label: user.is_active ? "Deactivate" : "Reactivate",
+                    tone: user.is_active ? "danger" : "default",
+                    onSelect: () => void toggleActive(user),
+                  },
+                ]}
+              />
             ),
           },
         ]}
