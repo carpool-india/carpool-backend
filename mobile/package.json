@@ -10,7 +10,8 @@
     "ios": "expo start --ios",
     "web": "expo start --web",
     "typecheck": "tsc --noEmit",
-    "test": "jest"
+    "test": "jest",
+    "postinstall": "npm run build --prefix ../backend/shared/types && npm run build --prefix ../backend/shared/utils"
   },
   "dependencies": {
     "@expo/vector-icons": "^15.0.3",
