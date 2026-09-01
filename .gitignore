@@ -16,3 +16,4 @@ __pycache__/
 venv/
 web-build/
 .claude/scheduled_tasks.lock
+google-service-account.json
