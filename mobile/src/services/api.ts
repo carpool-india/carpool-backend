@@ -4,8 +4,10 @@ import { useAuthStore } from "../store/authStore";
 
 const extra = (Constants.expoConfig?.extra ?? {}) as Record<string, string | undefined>;
 
+// Render's free tier spins services down after 15 min idle; the next
+// request has to wait for a cold start, which can take 15-20+ seconds.
 export const api = axios.create({
-  timeout: 15000,
+  timeout: 30000,
 });
 
 export const serviceUrls = {
