@@ -5,6 +5,7 @@ import {
   cancelBookingAsAdmin,
   cancelTripAsAdmin,
   getKycSession,
+  getKycSessionsForUser,
   getOverview,
   listBookings,
   listEmergencyContacts,
@@ -76,6 +77,12 @@ export async function getAdminKycById(req: Request, res: Response): Promise<void
   const id = z.string().uuid().parse(req.params.id);
   const session = await getKycSession(id);
   res.json(session);
+}
+
+export async function getAdminKycByUser(req: Request, res: Response): Promise<void> {
+  const userId = z.string().uuid().parse(req.params.userId);
+  const group = await getKycSessionsForUser(userId);
+  res.json(group);
 }
 
 const reviewKycSchema = z.object({
