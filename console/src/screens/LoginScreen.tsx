@@ -1,9 +1,6 @@
 import { useState } from "react";
 import { supabase } from "../lib/supabase";
 
-const ADMIN_EMAIL = "dineshemur@gmail.com";
-const ADMIN_PASSWORD = "dinesh@1993";
-
 export function LoginScreen() {
   const [mode, setMode] = useState<"signin" | "signup">("signin");
   const [email, setEmail] = useState("");
@@ -19,10 +16,7 @@ export function LoginScreen() {
     setLoading(true);
     try {
       if (mode === "signin") {
-        const { error: signInError } = await supabase.auth.signInWithPassword({
-          email: ADMIN_EMAIL,
-          password: ADMIN_PASSWORD,
-        });
+        const { error: signInError } = await supabase.auth.signInWithPassword({ email, password });
         if (signInError) throw signInError;
       } else {
         const { error: signUpError } = await supabase.auth.signUp({ email, password });
@@ -51,17 +45,25 @@ export function LoginScreen() {
           </div>
         </div>
 
-        <div className="mb-5 hidden rounded-full bg-slate-100 p-1 text-sm font-semibold">
+        <div className="mb-5 flex rounded-full bg-slate-100 p-1 text-sm font-semibold">
           <button
             className={`flex-1 rounded-full py-2 transition ${mode === "signin" ? "bg-white text-brand shadow-sm" : "text-slate-500"}`}
-            onClick={() => setMode("signin")}
+            onClick={() => {
+              setMode("signin");
+              setError(null);
+              setInfo(null);
+            }}
             type="button"
           >
             Sign in
           </button>
           <button
             className={`flex-1 rounded-full py-2 transition ${mode === "signup" ? "bg-white text-brand shadow-sm" : "text-slate-500"}`}
-            onClick={() => setMode("signup")}
+            onClick={() => {
+              setMode("signup");
+              setError(null);
+              setInfo(null);
+            }}
             type="button"
           >
             Sign up
@@ -74,8 +76,9 @@ export function LoginScreen() {
             <input
               type="email"
               required
-              value={ADMIN_EMAIL}
-              readOnly
+              autoComplete="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
               className="mt-1.5 block w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm font-medium text-slate-900 outline-none focus:border-brand"
               placeholder="you@rideshareindia.in"
             />
@@ -86,8 +89,9 @@ export function LoginScreen() {
               type="password"
               required
               minLength={6}
-              value={ADMIN_PASSWORD}
-              readOnly
+              autoComplete={mode === "signin" ? "current-password" : "new-password"}
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
               className="mt-1.5 block w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm font-medium text-slate-900 outline-none focus:border-brand"
               placeholder="••••••••"
             />
