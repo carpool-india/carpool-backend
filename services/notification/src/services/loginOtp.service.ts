@@ -3,7 +3,7 @@ import type { Session } from "@supabase/supabase-js";
 import { getAdminClient, getAnonClient } from "../lib/supabase";
 import { loadEnv } from "../lib/env";
 import { smsTemplates } from "../templates/sms.templates";
-import { sendFast2Sms, sendSms, sendTwoFactorSms } from "./sms.service";
+import { sendFast2Sms, sendSms, sendTwoFactorAutogenSms } from "./sms.service";
 import { sendOtpWhatsApp } from "./whatsapp.service";
 
 const OTP_TTL_MS = 5 * 60 * 1000;
@@ -23,6 +23,20 @@ function syntheticEmailFor(phone: string): string {
   return `${phone.replace(/\D/g, "")}@phone.rideshareindia.internal`;
 }
 
+async function storeOtp(client: ReturnType<typeof getAdminClient>, phone: string, otp: string): Promise<void> {
+  const now = new Date();
+  const { error } = await client.from("login_otps").upsert({
+    phone,
+    otp_hash: hashOtp(otp),
+    expires_at: new Date(now.getTime() + OTP_TTL_MS).toISOString(),
+    attempts: 0,
+    last_sent_at: now.toISOString(),
+  });
+  if (error) {
+    throw new Error(`Unable to store OTP: ${error.message}`);
+  }
+}
+
 export async function requestLoginOtp(phone: string): Promise<void> {
   const client = getAdminClient();
   const { data: existing } = await client
@@ -36,27 +50,34 @@ export async function requestLoginOtp(phone: string): Promise<void> {
   }
 
   const isTestPhone = TEST_PHONES.has(phone);
-  const otp = isTestPhone ? TEST_OTP : randomInt(0, 1000000).toString().padStart(6, "0");
-  const now = new Date();
-
-  const { error } = await client.from("login_otps").upsert({
-    phone,
-    otp_hash: hashOtp(otp),
-    expires_at: new Date(now.getTime() + OTP_TTL_MS).toISOString(),
-    attempts: 0,
-    last_sent_at: now.toISOString(),
-  });
-  if (error) {
-    throw new Error(`Unable to store OTP: ${error.message}`);
-  }
-
   if (isTestPhone) {
+    await storeOtp(client, phone, TEST_OTP);
     console.log(`[login-otp] test phone bypass — using fixed OTP, no SMS sent to ${phone}`);
     return;
   }
 
-  const message = smsTemplates.otp(otp);
   const env = loadEnv();
+
+  // 2Factor's AUTOGEN2 route picks its own OTP value (returned in the response), unlike
+  // WhatsApp/Fast2SMS/MSG91 which send an OTP we choose. It's tried first, ahead of those,
+  // because it's currently the only route proven to deliver a real SMS without our own
+  // DLT registration — the custom-text route needs that and falls back to a voice call.
+  const twoFactorConfigured = Boolean(env.TWOFACTOR_API_KEY);
+  if (twoFactorConfigured) {
+    try {
+      const otp = await sendTwoFactorAutogenSms(phone);
+      await storeOtp(client, phone, otp);
+      console.log(`[login-otp] delivered via 2Factor (AUTOGEN2) to ${phone}`);
+      return;
+    } catch (twoFactorError) {
+      console.log(`[login-otp] 2Factor failed: ${(twoFactorError as Error).message}`);
+    }
+  }
+
+  const otp = randomInt(0, 1000000).toString().padStart(6, "0");
+  await storeOtp(client, phone, otp);
+  const message = smsTemplates.otp(otp);
+
   const whatsappConfigured = Boolean(env.GUPSHUP_API_KEY && env.GUPSHUP_SOURCE_NUMBER && env.GUPSHUP_OTP_TEMPLATE_ID);
   if (whatsappConfigured) {
     try {
@@ -65,16 +86,6 @@ export async function requestLoginOtp(phone: string): Promise<void> {
       return;
     } catch (whatsappError) {
       console.log(`[login-otp] WhatsApp failed: ${(whatsappError as Error).message}`);
-    }
-  }
-  const twoFactorConfigured = Boolean(env.TWOFACTOR_API_KEY);
-  if (twoFactorConfigured) {
-    try {
-      await sendTwoFactorSms(phone, otp);
-      console.log(`[login-otp] delivered via 2Factor to ${phone}`);
-      return;
-    } catch (twoFactorError) {
-      console.log(`[login-otp] 2Factor failed: ${(twoFactorError as Error).message}`);
     }
   }
   try {

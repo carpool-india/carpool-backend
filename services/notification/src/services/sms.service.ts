@@ -28,17 +28,26 @@ interface TwoFactorResponse {
   Details?: string;
 }
 
-export async function sendTwoFactorSms(phone: string, otp: string): Promise<void> {
+interface TwoFactorAutogenResponse extends TwoFactorResponse {
+  OTP?: string;
+}
+
+// AUTOGEN2 uses 2Factor's own default OTP template, which doesn't require our own
+// DLT registration (unlike the custom-text /SMS/{phone}/{otp} route). 2Factor picks
+// the OTP value and hands it back in the response so we can still hash/store/verify
+// it exactly like a locally generated one.
+export async function sendTwoFactorAutogenSms(phone: string): Promise<string> {
   const env = loadEnv();
   const number = phone.startsWith("+") ? phone : `+91${phone}`;
   const response = await fetch(
-    `https://2factor.in/API/V1/${env.TWOFACTOR_API_KEY}/SMS/${encodeURIComponent(number)}/${otp}/OTP`,
+    `https://2factor.in/API/V1/${env.TWOFACTOR_API_KEY}/SMS/${encodeURIComponent(number)}/AUTOGEN2`,
     { signal: AbortSignal.timeout(PROVIDER_TIMEOUT_MS) },
   );
-  const data = (await response.json().catch(() => null)) as TwoFactorResponse | null;
-  if (!response.ok || data?.Status !== "Success") {
+  const data = (await response.json().catch(() => null)) as TwoFactorAutogenResponse | null;
+  if (!response.ok || data?.Status !== "Success" || !data.OTP) {
     throw new Error(`2Factor SMS failed: ${response.status} ${data?.Details ?? ""}`);
   }
+  return data.OTP;
 }
 
 interface Fast2SmsResponse {
