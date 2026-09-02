@@ -5,6 +5,7 @@ import { NotAuthorizedScreen } from "./screens/NotAuthorizedScreen";
 import { AppShell } from "./layout/AppShell";
 import { OverviewScreen } from "./screens/OverviewScreen";
 import { SafetyScreen } from "./screens/SafetyScreen";
+import { ReportsScreen } from "./screens/ReportsScreen";
 import { UsersScreen } from "./screens/UsersScreen";
 import { KycScreen } from "./screens/KycScreen";
 import { VehiclesScreen } from "./screens/VehiclesScreen";
@@ -36,6 +37,7 @@ export function App() {
       <Route element={<AppShell />}>
         <Route path="/" element={<OverviewScreen />} />
         <Route path="/safety" element={<SafetyScreen />} />
+        <Route path="/reports" element={<ReportsScreen />} />
         <Route path="/users" element={<UsersScreen />} />
         <Route path="/kyc" element={<KycScreen />} />
         <Route path="/vehicles" element={<VehiclesScreen />} />

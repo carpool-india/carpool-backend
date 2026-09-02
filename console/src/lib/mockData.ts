@@ -529,6 +529,35 @@ export const MOCK_RATINGS = [
   },
 ];
 
+export const MOCK_REPORTS = [
+  {
+    id: "rep_01",
+    reporter_id: "usr_03",
+    reported_id: "usr_08",
+    trip_id: "trip_01",
+    booking_id: null,
+    reason: "unsafe_driving",
+    details: "Overtook on the shoulder twice and was on the phone while driving.",
+    status: "open" as const,
+    created_at: hoursAgo(4),
+    reporter: { id: "usr_03", name: "Meera Nair", phone: "+919876501003" },
+    reported: { id: "usr_08", name: "Rahul Desai", phone: "+919876501008" },
+  },
+  {
+    id: "rep_02",
+    reporter_id: "usr_07",
+    reported_id: "usr_04",
+    trip_id: null,
+    booking_id: "bkg_02",
+    reason: "no_show",
+    details: null,
+    status: "open" as const,
+    created_at: daysAgo(1),
+    reporter: { id: "usr_07", name: "Sana Qureshi", phone: "+919876501007" },
+    reported: { id: "usr_04", name: "Vikram Shah", phone: "+919876501004" },
+  },
+];
+
 export const MOCK_SAFETY = [
   {
     id: "saf_01",

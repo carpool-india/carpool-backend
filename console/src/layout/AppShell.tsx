@@ -5,6 +5,7 @@ import { NavIcon, type IconName } from "../components/NavIcon";
 const NAV_ITEMS: Array<{ to: string; label: string; icon: IconName; end?: boolean }> = [
   { to: "/", label: "Overview", icon: "overview", end: true },
   { to: "/safety", label: "Safety", icon: "safety" },
+  { to: "/reports", label: "Reports", icon: "reports" },
   { to: "/users", label: "Users", icon: "users" },
   { to: "/kyc", label: "Documents", icon: "kyc" },
   { to: "/vehicles", label: "Vehicles", icon: "vehicles" },
@@ -18,6 +19,7 @@ const NAV_ITEMS: Array<{ to: string; label: string; icon: IconName; end?: boolea
 const PAGE_META: Record<string, { title: string; subtitle: string }> = {
   "/": { title: "Overview", subtitle: "Live platform snapshot" },
   "/safety": { title: "Safety", subtitle: "SOS, deviations, OTP failures, fraud flags" },
+  "/reports": { title: "Reports", subtitle: "User-submitted reports about other users" },
   "/users": { title: "Users", subtitle: "Search, verify, and manage access" },
   "/kyc": { title: "Documents", subtitle: "Review uploaded KYC files and verify identity" },
   "/vehicles": { title: "Vehicles", subtitle: "Verify cars and bikes before they take passengers" },

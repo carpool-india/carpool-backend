@@ -11,10 +11,12 @@ import {
   listEmergencyContacts,
   listKycSessions,
   listTrips,
+  listUserReports,
   listUsers,
   listVehicles,
   reviewKycSession,
   updateUser,
+  updateUserReportStatus,
   updateVehicle,
 } from "../services/admin.service";
 
@@ -133,4 +135,22 @@ export async function getAdminUserContacts(req: Request, res: Response): Promise
   const userId = z.string().uuid().parse(req.params.id);
   const result = await listEmergencyContacts(userId);
   res.json(result);
+}
+
+export async function getAdminReports(req: Request, res: Response): Promise<void> {
+  const { page, limit } = pageSchema.parse(req.query);
+  const status = typeof req.query.status === "string" ? req.query.status : undefined;
+  const result = await listUserReports(page, limit, status);
+  res.json(result);
+}
+
+const reportStatusSchema = z.object({
+  status: z.enum(["reviewed", "dismissed"]),
+});
+
+export async function patchAdminReport(req: Request, res: Response): Promise<void> {
+  const id = z.string().uuid().parse(req.params.id);
+  const { status } = reportStatusSchema.parse(req.body);
+  const report = await updateUserReportStatus(id, status);
+  res.json({ report });
 }

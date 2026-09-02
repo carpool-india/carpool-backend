@@ -10,7 +10,8 @@ type IconName =
   | "bookings"
   | "plans"
   | "payments"
-  | "ratings";
+  | "ratings"
+  | "reports";
 
 const PATHS: Record<IconName, ReactNode> = {
   overview: (
@@ -74,6 +75,12 @@ const PATHS: Record<IconName, ReactNode> = {
   ),
   ratings: (
     <path d="M12 3.5 14.6 9l6 .7-4.4 4 1.2 5.8L12 16.8 6.6 19.5 7.8 13.7 3.4 9.7 9.4 9 12 3.5Z" />
+  ),
+  reports: (
+    <>
+      <path d="M6 3v18" />
+      <path d="M6 4h11l-2.5 3.5L17 11H6" />
+    </>
   ),
 };
 
