@@ -1,6 +1,8 @@
 import { loadEnv } from "../lib/env";
 import { whatsappTemplates } from "../templates/whatsapp.templates";
 
+const PROVIDER_TIMEOUT_MS = 8000;
+
 export async function sendWhatsApp(destination: string, text: string): Promise<void> {
   const env = loadEnv();
   const body = new URLSearchParams({
@@ -17,6 +19,7 @@ export async function sendWhatsApp(destination: string, text: string): Promise<v
       "Content-Type": "application/x-www-form-urlencoded",
     },
     body,
+    signal: AbortSignal.timeout(PROVIDER_TIMEOUT_MS),
   });
   if (!response.ok) {
     throw new Error(`Gupshup WhatsApp failed: ${await response.text()}`);
@@ -39,6 +42,7 @@ export async function sendOtpWhatsApp(destination: string, otp: string): Promise
       "Content-Type": "application/x-www-form-urlencoded",
     },
     body,
+    signal: AbortSignal.timeout(PROVIDER_TIMEOUT_MS),
   });
   if (!response.ok) {
     throw new Error(`Gupshup WhatsApp OTP failed: ${await response.text()}`);

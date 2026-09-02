@@ -1,5 +1,7 @@
 import { loadEnv } from "../lib/env";
 
+const PROVIDER_TIMEOUT_MS = 8000;
+
 export async function sendSms(phone: string, message: string): Promise<void> {
   const env = loadEnv();
   const params = new URLSearchParams({
@@ -10,7 +12,9 @@ export async function sendSms(phone: string, message: string): Promise<void> {
     route: "4",
     country: "91",
   });
-  const response = await fetch(`https://api.msg91.com/api/sendhttp.php?${params.toString()}`);
+  const response = await fetch(`https://api.msg91.com/api/sendhttp.php?${params.toString()}`, {
+    signal: AbortSignal.timeout(PROVIDER_TIMEOUT_MS),
+  });
   const text = await response.text();
   // MSG91's legacy endpoint returns HTTP 200 even on failure — the real result is a
   // plain-text numeric request ID on success, or an error message otherwise.
@@ -41,7 +45,9 @@ export async function sendFast2Sms(phone: string, message: string): Promise<void
     message,
     numbers: number,
   });
-  const response = await fetch(`https://www.fast2sms.com/dev/bulkV2?${params.toString()}`);
+  const response = await fetch(`https://www.fast2sms.com/dev/bulkV2?${params.toString()}`, {
+    signal: AbortSignal.timeout(PROVIDER_TIMEOUT_MS),
+  });
   const data = (await response.json().catch(() => null)) as Fast2SmsResponse | null;
   console.log(`[fast2sms] response: ${JSON.stringify(data)}`);
   if (!response.ok || !data?.return) {
