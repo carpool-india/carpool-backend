@@ -84,7 +84,7 @@ export function LoginScreen({
             removeClippedSubviews={false}
             {...containedScrollProps}
           >
-            <View className="flex-1 px-6 pt-2" style={{ paddingTop: insets.top + 8 }}>
+            <View className={`px-6 pt-2 ${keyboardVisible ? "" : "flex-1"}`} style={{ paddingTop: insets.top + 8 }}>
               <View className="flex-row items-center justify-between">
                 <View className="flex-row items-center">
                   <View
