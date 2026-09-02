@@ -1,5 +1,6 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
+  Keyboard,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -38,6 +39,18 @@ export function LoginScreen({
   const { sendOtp, loading, error } = useSupabaseAuth();
   const insets = useSafeAreaInsets();
   const local = phone.replace(/^\+91/, "");
+  const [keyboardVisible, setKeyboardVisible] = useState(false);
+
+  useEffect(() => {
+    const showEvent = Platform.OS === "ios" ? "keyboardWillShow" : "keyboardDidShow";
+    const hideEvent = Platform.OS === "ios" ? "keyboardWillHide" : "keyboardDidHide";
+    const showSub = Keyboard.addListener(showEvent, () => setKeyboardVisible(true));
+    const hideSub = Keyboard.addListener(hideEvent, () => setKeyboardVisible(false));
+    return () => {
+      showSub.remove();
+      hideSub.remove();
+    };
+  }, []);
 
   async function submit() {
     const parsed = indianPhoneSchema.safeParse(phone);
@@ -97,11 +110,15 @@ export function LoginScreen({
                 </View>
               </View>
 
-              <View className="flex-1 justify-center pb-4">
-                <Text className="text-[34px] font-extrabold leading-[40px] text-white">{t(language, "loginHeadline")}</Text>
-                <Text className="mt-3 text-base text-teal-50">{t(language, "loginTagline")}</Text>
-                <RouteArt fromLabel={t(language, "from")} toLabel={t(language, "to")} />
-              </View>
+              {!keyboardVisible ? (
+                <View className="flex-1 justify-center pb-4">
+                  <Text className="text-[34px] font-extrabold leading-[40px] text-white">{t(language, "loginHeadline")}</Text>
+                  <Text className="mt-3 text-base text-teal-50">{t(language, "loginTagline")}</Text>
+                  <RouteArt fromLabel={t(language, "from")} toLabel={t(language, "to")} />
+                </View>
+              ) : (
+                <View className="pb-4" />
+              )}
             </View>
 
             <View
