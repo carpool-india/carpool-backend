@@ -7,11 +7,13 @@ import {
   getAdminKycById,
   getAdminKycByUser,
   getAdminOverview,
+  getAdminReports,
   getAdminTrips,
   getAdminUserContacts,
   getAdminUsers,
   getAdminVehicles,
   patchAdminKyc,
+  patchAdminReport,
   patchAdminUser,
   patchAdminVehicle,
   postAdminCancelBooking,
@@ -35,3 +37,5 @@ adminRouter.patch("/bookings/:id/cancel", postAdminCancelBooking);
 adminRouter.get("/vehicles", getAdminVehicles);
 adminRouter.patch("/vehicles/:id", patchAdminVehicle);
 adminRouter.get("/users/:id/contacts", getAdminUserContacts);
+adminRouter.get("/reports", getAdminReports);
+adminRouter.patch("/reports/:id", patchAdminReport);

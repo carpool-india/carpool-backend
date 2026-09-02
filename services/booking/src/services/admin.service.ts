@@ -390,3 +390,53 @@ export async function listEmergencyContacts(userId: string) {
   }
   return { items: data ?? [] };
 }
+
+export type UserReportStatus = "open" | "reviewed" | "dismissed";
+
+export interface UserReportRow {
+  id: string;
+  reporter_id: string;
+  reported_id: string;
+  trip_id: string | null;
+  booking_id: string | null;
+  reason: string;
+  details: string | null;
+  status: UserReportStatus;
+  created_at: string;
+  reporter: { id: string; name: string | null; phone: string } | null;
+  reported: { id: string; name: string | null; phone: string } | null;
+}
+
+export async function listUserReports(page: number, limit: number, status?: string) {
+  const client = getAdminClient();
+  let query = client
+    .from("user_reports")
+    .select(
+      "id, reporter_id, reported_id, trip_id, booking_id, reason, details, status, created_at, reporter:users!user_reports_reporter_id_fkey(id, name, phone), reported:users!user_reports_reported_id_fkey(id, name, phone)",
+      { count: "exact" }
+    )
+    .order("created_at", { ascending: false });
+  if (status) {
+    query = query.eq("status", status);
+  }
+  const [start, end] = range(page, limit);
+  const { data, error, count } = await query.range(start, end);
+  if (error) {
+    throw new HttpError(400, "bad_request", error.message);
+  }
+  return { items: (data ?? []) as unknown as UserReportRow[], total: count ?? 0 };
+}
+
+export async function updateUserReportStatus(id: string, status: "reviewed" | "dismissed") {
+  const client = getAdminClient();
+  const { data, error } = await client
+    .from("user_reports")
+    .update({ status })
+    .eq("id", id)
+    .select("*")
+    .maybeSingle();
+  if (error || !data) {
+    throw new HttpError(400, "bad_request", error?.message ?? "Unable to update report");
+  }
+  return data;
+}

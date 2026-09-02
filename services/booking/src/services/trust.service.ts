@@ -1,7 +1,44 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { CreateReportInput, UserReport } from "@rideshare/types";
-import { badRequest } from "../lib/errors";
+import { badRequest, notFound } from "../lib/errors";
 import { resolveAppUserId } from "./trip.service";
+
+export interface TrustScoreBreakdown {
+  total: number;
+  kycPoints: number;
+  kycMax: number;
+  aadhaarVerified: boolean;
+  dlVerified: boolean;
+  faceMatchDone: boolean;
+  ratingPoints: number;
+  ratingMax: number;
+  averageStars: number;
+  ratingCount: number;
+  completionPoints: number;
+  completionMax: number;
+  completedTrips: number;
+  cancellationPenalty: number;
+  cancellations: number;
+  fraudPenalty: number;
+  fraudFlags: number;
+}
+
+export async function getTrustScoreBreakdown(
+  client: SupabaseClient,
+  supabaseAuthId: string,
+  targetUserId?: string
+): Promise<TrustScoreBreakdown> {
+  const selfId = await resolveAppUserId(client, supabaseAuthId);
+  const userId = targetUserId || selfId;
+  const { data, error } = await client.rpc("get_trust_score_breakdown", { p_user_id: userId });
+  if (error) {
+    throw badRequest(error.message);
+  }
+  if (!data) {
+    throw notFound("User not found");
+  }
+  return data as TrustScoreBreakdown;
+}
 
 export async function createReport(
   client: SupabaseClient,
