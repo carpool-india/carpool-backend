@@ -10,8 +10,14 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@rideshare/types": "*",
+    "@rideshare/utils": "*",
+    "@supabase/supabase-js": "^2.45.0",
+    "axios": "^1.7.2",
     "react": "19.1.0",
-    "react-dom": "19.1.0"
+    "react-dom": "19.1.0",
+    "react-router-dom": "^6.26.0",
+    "zustand": "^4.5.4"
   },
   "devDependencies": {
     "@types/react": "^19.1.10",
