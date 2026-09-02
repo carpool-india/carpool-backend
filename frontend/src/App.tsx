@@ -9,6 +9,11 @@ import { SearchPage } from "./pages/SearchPage";
 import { RideDetailPage } from "./pages/RideDetailPage";
 import { BookingPaymentPage } from "./pages/BookingPaymentPage";
 import { BookingConfirmedPage } from "./pages/BookingConfirmedPage";
+import { ProfilePage } from "./pages/ProfilePage";
+import { VehiclePage } from "./pages/VehiclePage";
+import { PlansPage } from "./pages/PlansPage";
+import { PostTripPage } from "./pages/PostTripPage";
+import { MyTripsPage } from "./pages/MyTripsPage";
 
 export function App() {
   return (
@@ -40,6 +45,46 @@ export function App() {
           element={
             <RequireAuth>
               <BookingConfirmedPage />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/profile"
+          element={
+            <RequireAuth>
+              <ProfilePage />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/vehicle"
+          element={
+            <RequireAuth>
+              <VehiclePage />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/plans"
+          element={
+            <RequireAuth>
+              <PlansPage />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/post"
+          element={
+            <RequireAuth>
+              <PostTripPage />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/trips"
+          element={
+            <RequireAuth>
+              <MyTripsPage />
             </RequireAuth>
           }
         />

@@ -1,5 +1,12 @@
-import { Link, Outlet, useLocation, useNavigate } from "react-router-dom";
+import { Link, NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { useAuthStore } from "../store/authStore";
+
+const TABS = [
+  { to: "/search", label: "Search" },
+  { to: "/trips", label: "My Trips" },
+  { to: "/post", label: "Post a Ride" },
+  { to: "/profile", label: "Profile" },
+];
 
 function Nav() {
   const location = useLocation();
@@ -35,9 +42,9 @@ function Nav() {
         ) : null}
         {sessionToken ? (
           <div className="flex items-center gap-4">
-            <Link to="/search" className="hidden text-sm font-semibold text-ink-soft transition hover:text-ink sm:block">
-              {user?.name ? `Hi, ${user.name.split(" ")[0]}` : "Search"}
-            </Link>
+            <span className="hidden text-sm font-semibold text-ink-soft sm:block">
+              {user?.name ? `Hi, ${user.name.split(" ")[0]}` : ""}
+            </span>
             <button
               type="button"
               onClick={handleSignOut}
@@ -55,6 +62,25 @@ function Nav() {
           </Link>
         )}
       </div>
+      {sessionToken ? (
+        <div className="border-t border-line/70">
+          <div className="mx-auto flex max-w-6xl gap-1 overflow-x-auto px-4">
+            {TABS.map((tab) => (
+              <NavLink
+                key={tab.to}
+                to={tab.to}
+                className={({ isActive }) =>
+                  `whitespace-nowrap border-b-2 px-3 py-2.5 text-sm font-bold transition ${
+                    isActive ? "border-brand text-brand" : "border-transparent text-ink-faint hover:text-ink"
+                  }`
+                }
+              >
+                {tab.label}
+              </NavLink>
+            ))}
+          </div>
+        </div>
+      ) : null}
     </header>
   );
 }
