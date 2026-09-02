@@ -32,7 +32,8 @@
         "EXPO_PUBLIC_NOTIFICATION_SERVICE_URL": "https://rideshare-notification.onrender.com",
         "EXPO_PUBLIC_SAFETY_SERVICE_URL": "https://rideshare-safety.onrender.com",
         "EXPO_PUBLIC_CENTRIFUGO_WS_URL": "wss://rideshare-centrifugo.onrender.com/connection/websocket",
-        "EXPO_PUBLIC_GOOGLE_MAPS_API_KEY": "AIzaSyBDccVX1R2U8-UMKjSMd3jIutnHv-FbUJQ"
+        "EXPO_PUBLIC_GOOGLE_MAPS_API_KEY": "AIzaSyBDccVX1R2U8-UMKjSMd3jIutnHv-FbUJQ",
+        "EXPO_PUBLIC_RAZORPAY_KEY_ID": "rzp_test_TBP7Y7tpefQMSh"
       }
     },
     "production": {
