@@ -32,7 +32,7 @@ export async function sendTwoFactorSms(phone: string, otp: string): Promise<void
   const env = loadEnv();
   const number = phone.startsWith("+") ? phone : `+91${phone}`;
   const response = await fetch(
-    `https://2factor.in/API/V1/${env.TWOFACTOR_API_KEY}/SMS/${encodeURIComponent(number)}/${otp}`,
+    `https://2factor.in/API/V1/${env.TWOFACTOR_API_KEY}/SMS/${encodeURIComponent(number)}/${otp}/OTP`,
     { signal: AbortSignal.timeout(PROVIDER_TIMEOUT_MS) },
   );
   const data = (await response.json().catch(() => null)) as TwoFactorResponse | null;
