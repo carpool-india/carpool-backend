@@ -339,8 +339,10 @@ export function HomeScreen({ navigation }: TabScreenProps<"SearchTab">) {
                   setSeats(item.seats);
                   void (async () => {
                     try {
-                      const from = await geocodePlace(item.origin, { language });
-                      const to = await geocodePlace(item.destination, { language });
+                      const [from, to] = await Promise.all([
+                        geocodePlace(item.origin, { language }),
+                        geocodePlace(item.destination, { language }),
+                      ]);
                       setOriginPlace(from);
                       setDestinationPlace(to);
                       await search(from, to, item.date, item.seats);
