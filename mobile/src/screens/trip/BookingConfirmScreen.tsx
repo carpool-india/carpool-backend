@@ -22,6 +22,9 @@ export function BookingConfirmScreen({
   const [status, setStatus] = useState<BookingStatus>(booking?.status ?? "pending");
 
   useEffect(() => {
+    if (status === "confirmed") {
+      return;
+    }
     let cancelled = false;
     async function poll() {
       const result = await paymentGet<{ status: string }>(`/status?bookingId=${route.params.bookingId}`);
@@ -43,7 +46,7 @@ export function BookingConfirmScreen({
       cancelled = true;
       clearInterval(timer);
     };
-  }, [booking, route.params.bookingId, setActiveBooking]);
+  }, [status, booking, route.params.bookingId, setActiveBooking]);
 
   const paid = status === "confirmed";
 

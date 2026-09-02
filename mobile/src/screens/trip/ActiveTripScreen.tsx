@@ -29,7 +29,7 @@ export function ActiveTripScreen({
   const lng = useLocationStore((state) => state.lng) ?? 77.5946;
   const isDriver = role === "driver" || role === "both";
 
-  useLocation(true);
+  useLocation(isDriver);
   useLiveGps(tripId, isDriver, trip?.routePolyline);
   useRealtimeTrip(isDriver ? null : tripId);
 
