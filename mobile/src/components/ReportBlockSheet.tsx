@@ -1,8 +1,8 @@
-import { useState } from "react";
-import { Modal, Pressable, Text, TextInput, View } from "react-native";
+import { useEffect, useState } from "react";
+import { Alert, Modal, Pressable, Text, TextInput, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import type { ReportReason } from "@rideshare/types";
-import { bookingDelete, bookingPost } from "../services/api";
+import { bookingDelete, bookingGet, bookingPost } from "../services/api";
 import { t, type AppLanguage } from "../i18n/translations";
 import { PrimaryButton } from "./ui/PrimaryButton";
 import { softShadow } from "../theme/shadows";
@@ -24,7 +24,6 @@ export function ReportBlockSheet({
   userName,
   tripId,
   bookingId,
-  isBlocked = false,
 }: {
   visible: boolean;
   onClose: () => void;
@@ -33,13 +32,22 @@ export function ReportBlockSheet({
   userName: string;
   tripId?: string;
   bookingId?: string;
-  isBlocked?: boolean;
 }) {
   const [mode, setMode] = useState<"menu" | "report">("menu");
   const [reason, setReason] = useState<ReportReason | null>(null);
   const [details, setDetails] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [done, setDone] = useState<string | null>(null);
+  const [isBlocked, setIsBlocked] = useState(false);
+
+  useEffect(() => {
+    if (!visible) {
+      return;
+    }
+    bookingGet<{ users: Array<{ id: string }> }>("/trust/blocks")
+      .then((res) => setIsBlocked(res.users.some((u) => u.id === userId)))
+      .catch(() => setIsBlocked(false));
+  }, [visible, userId]);
 
   function reset() {
     setMode("menu");
@@ -63,7 +71,7 @@ export function ReportBlockSheet({
     }
   }
 
-  async function toggleBlock() {
+  async function runToggleBlock() {
     setSubmitting(true);
     try {
       if (isBlocked) {
@@ -79,6 +87,17 @@ export function ReportBlockSheet({
     } finally {
       setSubmitting(false);
     }
+  }
+
+  function toggleBlock() {
+    if (isBlocked) {
+      void runToggleBlock();
+      return;
+    }
+    Alert.alert(t(language, "blockUserAction"), t(language, "blockConfirm"), [
+      { text: t(language, "cancel"), style: "cancel" },
+      { text: t(language, "blockUserAction"), style: "destructive", onPress: () => void runToggleBlock() },
+    ]);
   }
 
   return (

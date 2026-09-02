@@ -31,6 +31,7 @@ export const translations = {
     reportReasonPrompt: "What's the issue?",
     reportDetailsPlaceholder: "Add details (optional)",
     submit: "Submit",
+    cancel: "Cancel",
     blockUserAction: "Block user",
     unblockUserAction: "Unblock",
     blockConfirm: "Block this user? They won't be able to book your trips or message you.",
@@ -238,6 +239,8 @@ export const translations = {
     trustScorePenaltiesDetail: "From cancellations or fraud reports",
     trustScoreImproveSelf: "Complete verified trips and get rated to raise your score.",
     trustScoreClose: "Close",
+    blockedUsersSubtitle: "People you've blocked can't book your rides or be booked by you.",
+    unknownUser: "Unknown user",
   },
   hi: {
     appName: "राइडशेयर इंडिया",
@@ -269,6 +272,7 @@ export const translations = {
     reportReasonPrompt: "समस्या क्या है?",
     reportDetailsPlaceholder: "विवरण जोड़ें (वैकल्पिक)",
     submit: "सबमिट करें",
+    cancel: "रद्द करें",
     blockUserAction: "उपयोगकर्ता को ब्लॉक करें",
     unblockUserAction: "अनब्लॉक करें",
     blockConfirm: "इस उपयोगकर्ता को ब्लॉक करें? वे आपकी ट्रिप बुक या मैसेज नहीं कर पाएंगे।",
@@ -476,6 +480,8 @@ export const translations = {
     trustScorePenaltiesDetail: "कैंसिलेशन या फ्रॉड रिपोर्ट के कारण",
     trustScoreImproveSelf: "सत्यापित ट्रिप पूरी करें और रेटिंग पाएं — स्कोर बढ़ेगा।",
     trustScoreClose: "बंद करें",
+    blockedUsersSubtitle: "आपने जिन्हें ब्लॉक किया है, वे न तो आपकी राइड बुक कर सकते हैं और न ही आप उनकी।",
+    unknownUser: "अज्ञात उपयोगकर्ता",
   },
   ta: {
     appName: "ரைட்ஷேர் இந்தியா",
@@ -507,6 +513,7 @@ export const translations = {
     reportReasonPrompt: "என்ன பிரச்சனை?",
     reportDetailsPlaceholder: "விவரங்களைச் சேர்க்கவும் (விருப்பத்தேர்வு)",
     submit: "சமர்ப்பி",
+    cancel: "ரத்து செய்",
     blockUserAction: "பயனரைத் தடு",
     unblockUserAction: "தடையை நீக்கு",
     blockConfirm: "இந்தப் பயனரைத் தடுக்கவா? அவர்களால் உங்கள் பயணங்களை முன்பதிவு செய்யவோ செய்தி அனுப்பவோ முடியாது.",
@@ -714,6 +721,8 @@ export const translations = {
     trustScorePenaltiesDetail: "ரத்துசெய்தல் அல்லது மோசடி புகார்களால்",
     trustScoreImproveSelf: "சரிபார்க்கப்பட்ட பயணங்களை முடித்து மதிப்பீடு பெறுங்கள் — மதிப்பெண் உயரும்.",
     trustScoreClose: "மூடு",
+    blockedUsersSubtitle: "நீங்கள் தடுத்தவர்கள் உங்கள் சவாரிகளை பதிவு செய்ய முடியாது, நீங்களும் அவர்களுடையதை பதிவு செய்ய முடியாது.",
+    unknownUser: "தெரியாத பயனர்",
   },
 } as const;
 

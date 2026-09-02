@@ -14,6 +14,7 @@ import { ChatScreen } from "../screens/trip/ChatScreen";
 import { TripPassengersScreen } from "../screens/trip/TripPassengersScreen";
 import { RateTripScreen } from "../screens/trip/RateTripScreen";
 import { EmergencyContactsScreen } from "../screens/profile/EmergencyContactsScreen";
+import { BlockedUsersScreen } from "../screens/profile/BlockedUsersScreen";
 import { VehicleScreen } from "../screens/profile/VehicleScreen";
 import { LanguageScreen } from "../screens/profile/LanguageScreen";
 import { PaymentsScreen } from "../screens/profile/PaymentsScreen";
@@ -85,6 +86,11 @@ export function RootNavigator() {
         name="EmergencyContacts"
         component={EmergencyContactsScreen}
         options={{ ...overlayOptions, title: t(language, "emergencyContacts") }}
+      />
+      <Stack.Screen
+        name="BlockedUsers"
+        component={BlockedUsersScreen}
+        options={{ ...overlayOptions, title: t(language, "blockedUsers") }}
       />
       <Stack.Screen name="Vehicle" component={VehicleScreen} options={{ ...overlayOptions, title: t(language, "myVehicle") }} />
       <Stack.Screen name="Language" component={LanguageScreen} options={{ ...overlayOptions, title: t(language, "language") }} />

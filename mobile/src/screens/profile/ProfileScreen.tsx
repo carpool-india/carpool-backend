@@ -123,6 +123,11 @@ export function ProfileScreen({ navigation }: TabScreenProps<"ProfileTab">) {
           onPress={() => navigateRoot(navigation, "EmergencyContacts")}
         />
         <MenuRow
+          icon="ban-outline"
+          label={t(language, "blockedUsers")}
+          onPress={() => navigateRoot(navigation, "BlockedUsers")}
+        />
+        <MenuRow
           icon="help-circle-outline"
           label={t(language, "helpSafety")}
           onPress={() => navigateRoot(navigation, "Help")}

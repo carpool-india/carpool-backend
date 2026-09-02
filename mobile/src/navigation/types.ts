@@ -25,6 +25,7 @@ export type RootStackParamList = {
   TripPassengers: { tripId: string };
   RateTrip: undefined;
   EmergencyContacts: undefined;
+  BlockedUsers: undefined;
   Vehicle: undefined;
   Language: undefined;
   Payments: undefined;
