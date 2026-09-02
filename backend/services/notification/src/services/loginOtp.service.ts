@@ -3,7 +3,7 @@ import type { Session } from "@supabase/supabase-js";
 import { getAdminClient, getAnonClient } from "../lib/supabase";
 import { loadEnv } from "../lib/env";
 import { smsTemplates } from "../templates/sms.templates";
-import { sendFast2Sms, sendSms } from "./sms.service";
+import { sendFast2Sms, sendSms, sendTwoFactorSms } from "./sms.service";
 import { sendOtpWhatsApp } from "./whatsapp.service";
 
 const OTP_TTL_MS = 5 * 60 * 1000;
@@ -65,6 +65,16 @@ export async function requestLoginOtp(phone: string): Promise<void> {
       return;
     } catch (whatsappError) {
       console.log(`[login-otp] WhatsApp failed: ${(whatsappError as Error).message}`);
+    }
+  }
+  const twoFactorConfigured = Boolean(env.TWOFACTOR_API_KEY);
+  if (twoFactorConfigured) {
+    try {
+      await sendTwoFactorSms(phone, otp);
+      console.log(`[login-otp] delivered via 2Factor to ${phone}`);
+      return;
+    } catch (twoFactorError) {
+      console.log(`[login-otp] 2Factor failed: ${(twoFactorError as Error).message}`);
     }
   }
   try {
