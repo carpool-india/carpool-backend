@@ -1,6 +1,7 @@
 import { randomInt, createHash, timingSafeEqual } from "node:crypto";
 import type { Session } from "@supabase/supabase-js";
 import { getAdminClient, getAnonClient } from "../lib/supabase";
+import { loadEnv } from "../lib/env";
 import { smsTemplates } from "../templates/sms.templates";
 import { sendFast2Sms, sendSms } from "./sms.service";
 import { sendOtpWhatsApp } from "./whatsapp.service";
@@ -55,12 +56,16 @@ export async function requestLoginOtp(phone: string): Promise<void> {
   }
 
   const message = smsTemplates.otp(otp);
-  try {
-    await sendOtpWhatsApp(phone, otp);
-    console.log(`[login-otp] delivered via WhatsApp to ${phone}`);
-    return;
-  } catch (whatsappError) {
-    console.log(`[login-otp] WhatsApp failed: ${(whatsappError as Error).message}`);
+  const env = loadEnv();
+  const whatsappConfigured = Boolean(env.GUPSHUP_API_KEY && env.GUPSHUP_SOURCE_NUMBER && env.GUPSHUP_OTP_TEMPLATE_ID);
+  if (whatsappConfigured) {
+    try {
+      await sendOtpWhatsApp(phone, otp);
+      console.log(`[login-otp] delivered via WhatsApp to ${phone}`);
+      return;
+    } catch (whatsappError) {
+      console.log(`[login-otp] WhatsApp failed: ${(whatsappError as Error).message}`);
+    }
   }
   try {
     await sendFast2Sms(phone, message);
