@@ -9,6 +9,7 @@ const envSchema = z.object({
   MSG91_AUTH_KEY: z.string().default(""),
   MSG91_SENDER_ID: z.string().min(3).default("RDSHAR"),
   FAST2SMS_API_KEY: z.string().min(20),
+  TWOFACTOR_API_KEY: z.string().default(""),
   GUPSHUP_API_KEY: z.string().default(""),
   GUPSHUP_SOURCE_NUMBER: z.string().default(""),
   GUPSHUP_OTP_TEMPLATE_ID: z.string().default(""),
