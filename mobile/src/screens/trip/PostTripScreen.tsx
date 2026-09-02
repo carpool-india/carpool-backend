@@ -198,7 +198,7 @@ export function PostTripScreen({ navigation }: TabScreenProps<"PublishTab">) {
   ][step];
 
   return (
-    <Screen variant="stacked" scroll>
+    <Screen variant="plain" scroll>
       <View className="px-4 pt-4">
         <StepProgress step={step} total={STEP_COUNT} title={stepTitle} />
 
