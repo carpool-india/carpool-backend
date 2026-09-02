@@ -75,4 +75,40 @@ export const icons = {
       <circle cx="16.5" cy="14" r="1" fill="currentColor" stroke="none" />
     </>
   ),
+  search: (
+    <>
+      <circle cx="11" cy="11" r="7" />
+      <path d="M21 21l-4.3-4.3" />
+    </>
+  ),
+  calendar: (
+    <>
+      <rect x="3.5" y="5" width="17" height="16" rx="2.5" />
+      <path d="M3.5 10h17M8 3v4M16 3v4" />
+    </>
+  ),
+  car: (
+    <>
+      <path d="M5 16.5V11l1.6-4.8A2 2 0 0 1 8.4 5h7.2a2 2 0 0 1 1.9 1.2L19 11v5.5" />
+      <circle cx="8" cy="16.5" r="1.6" />
+      <circle cx="16" cy="16.5" r="1.6" />
+      <path d="M5 12.5h14" />
+    </>
+  ),
+  person: (
+    <>
+      <circle cx="12" cy="8" r="3.4" />
+      <path d="M5 20c0-3.9 3.1-7 7-7s7 3.1 7 7" />
+    </>
+  ),
+  menu: (
+    <>
+      <path d="M4 7h16M4 12h16M4 17h16" />
+    </>
+  ),
+  close: (
+    <>
+      <path d="M6 6l12 12M18 6L6 18" />
+    </>
+  ),
 };

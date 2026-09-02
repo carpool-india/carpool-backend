@@ -1,25 +1,10 @@
-import { Link, NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
+import { Link, Outlet, useLocation } from "react-router-dom";
 import { useAuthStore } from "../store/authStore";
-
-const TABS = [
-  { to: "/search", label: "Search" },
-  { to: "/trips", label: "My Trips" },
-  { to: "/post", label: "Post a Ride" },
-  { to: "/profile", label: "Profile" },
-];
 
 function Nav() {
   const location = useLocation();
-  const navigate = useNavigate();
   const onLanding = location.pathname === "/";
-  const user = useAuthStore((state) => state.user);
   const sessionToken = useAuthStore((state) => state.sessionToken);
-  const signOut = useAuthStore((state) => state.signOut);
-
-  function handleSignOut() {
-    signOut();
-    navigate("/");
-  }
 
   return (
     <header className="sticky top-0 z-20 border-b border-line/70 bg-paper/85 backdrop-blur">
@@ -41,18 +26,12 @@ function Nav() {
           </nav>
         ) : null}
         {sessionToken ? (
-          <div className="flex items-center gap-4">
-            <span className="hidden text-sm font-semibold text-ink-soft sm:block">
-              {user?.name ? `Hi, ${user.name.split(" ")[0]}` : ""}
-            </span>
-            <button
-              type="button"
-              onClick={handleSignOut}
-              className="rounded-full border border-line px-4 py-1.5 text-sm font-semibold text-ink-soft transition hover:border-brand hover:text-brand"
-            >
-              Sign out
-            </button>
-          </div>
+          <Link
+            to="/search"
+            className="rounded-full bg-brand px-5 py-2 text-sm font-semibold text-white shadow-card transition hover:bg-brand-dark"
+          >
+            Go to app
+          </Link>
         ) : (
           <Link
             to="/login"
@@ -62,25 +41,6 @@ function Nav() {
           </Link>
         )}
       </div>
-      {sessionToken ? (
-        <div className="border-t border-line/70">
-          <div className="mx-auto flex max-w-6xl gap-1 overflow-x-auto px-4">
-            {TABS.map((tab) => (
-              <NavLink
-                key={tab.to}
-                to={tab.to}
-                className={({ isActive }) =>
-                  `whitespace-nowrap border-b-2 px-3 py-2.5 text-sm font-bold transition ${
-                    isActive ? "border-brand text-brand" : "border-transparent text-ink-faint hover:text-ink"
-                  }`
-                }
-              >
-                {tab.label}
-              </NavLink>
-            ))}
-          </div>
-        </div>
-      ) : null}
     </header>
   );
 }

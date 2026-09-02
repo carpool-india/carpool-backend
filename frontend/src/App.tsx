@@ -1,5 +1,5 @@
-import { Route, Routes } from "react-router-dom";
-import { Layout } from "./layout/Layout";
+import { Navigate, Route, Routes } from "react-router-dom";
+import { RootLayout } from "./layout/RootLayout";
 import { RequireAuth } from "./components/RequireAuth";
 import { LandingPage } from "./pages/LandingPage";
 import { LoginPage } from "./pages/LoginPage";
@@ -14,12 +14,21 @@ import { VehiclePage } from "./pages/VehiclePage";
 import { PlansPage } from "./pages/PlansPage";
 import { PostTripPage } from "./pages/PostTripPage";
 import { MyTripsPage } from "./pages/MyTripsPage";
+import { useAuthStore } from "./store/authStore";
+
+function HomeRoute() {
+  const sessionToken = useAuthStore((state) => state.sessionToken);
+  if (sessionToken) {
+    return <Navigate to="/search" replace />;
+  }
+  return <LandingPage />;
+}
 
 export function App() {
   return (
     <Routes>
-      <Route element={<Layout />}>
-        <Route path="/" element={<LandingPage />} />
+      <Route element={<RootLayout />}>
+        <Route path="/" element={<HomeRoute />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/otp" element={<OtpVerifyPage />} />
         <Route
