@@ -186,7 +186,7 @@ export function HomeScreen({ navigation }: TabScreenProps<"SearchTab">) {
                 </Text>
                 <Text className="mt-2 text-[28px] font-extrabold leading-8 text-white">{t(language, "greeting")}</Text>
               </View>
-              <TrustScoreBadge score={user?.trustScore ?? 0} light />
+              <TrustScoreBadge score={user?.trustScore ?? 0} userId={user?.id} light />
             </View>
             <Text className="mt-2 text-base text-teal-50">
               {t(language, "namaste")}

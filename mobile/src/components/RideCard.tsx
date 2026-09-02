@@ -67,7 +67,7 @@ export function RideCard({
             ) : null}
           </View>
           <View className="mt-1 flex-row items-center gap-1.5 self-start">
-            <TrustScoreBadge score={trustScore} />
+            <TrustScoreBadge score={trustScore} userId={trip.driverId} />
             <View className={`rounded-full px-2 py-1 ${trip.tripType === "intercity" ? "bg-amber-50" : "bg-brand-light"}`}>
               <Text className={`text-[10px] font-bold ${trip.tripType === "intercity" ? "text-amber-700" : "text-brand"}`}>
                 {t(language, trip.tripType === "intercity" ? "intercity" : "intracity")}

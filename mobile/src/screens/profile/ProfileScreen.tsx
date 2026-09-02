@@ -79,7 +79,7 @@ export function ProfileScreen({ navigation }: TabScreenProps<"ProfileTab">) {
                   <Text className="text-teal-100">{user?.phone}</Text>
                   {photoError ? <Text className="mt-1 text-xs text-red-200">{photoError}</Text> : null}
                 </View>
-                <TrustScoreBadge score={user?.trustScore ?? 0} light />
+                <TrustScoreBadge score={user?.trustScore ?? 0} userId={user?.id} light />
               </View>
             </View>
         </DecorativeHero>
