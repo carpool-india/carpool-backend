@@ -68,6 +68,7 @@ export function LoginScreen({
           <ScrollView
             className="flex-1"
             contentContainerStyle={{ flexGrow: 1 }}
+            removeClippedSubviews={false}
             {...containedScrollProps}
           >
             <View className="flex-1 px-6 pt-2" style={{ paddingTop: insets.top + 8 }}>
@@ -124,6 +125,9 @@ export function LoginScreen({
                   value={formatLocalPhone(local)}
                   onChangeText={(value) => setPhone(`+91${value.replace(/\D/g, "").slice(0, 10)}`)}
                   keyboardType="phone-pad"
+                  autoComplete="tel"
+                  textContentType="telephoneNumber"
+                  importantForAutofill="no"
                   className="flex-1 py-[18px] text-[18px] font-bold tracking-wide text-slate-900"
                   placeholder="98765 43210"
                   placeholderTextColor="#94A3B8"
@@ -154,9 +158,8 @@ export function LoginScreen({
               </Pressable>
 
               <View className="mt-4 flex-row items-center justify-center">
-                <Ionicons name="logo-whatsapp" size={16} color="#25D366" />
-                <Ionicons name="chatbubble-ellipses" size={15} color="#0F766E" style={{ marginLeft: 8 }} />
-                <Text className="ml-2 text-xs font-semibold text-slate-500">{t(language, "loginWhatsapp")}</Text>
+                <Ionicons name="chatbubble-ellipses" size={15} color="#0F766E" />
+                <Text className="ml-2 text-xs font-semibold text-slate-500">{t(language, "loginOtpChannel")}</Text>
               </View>
 
               <View className="mt-5 flex-row gap-2">
