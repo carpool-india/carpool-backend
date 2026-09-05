@@ -7,6 +7,7 @@ import {
 } from "@rideshare/types";
 import { paymentGet, paymentPost } from "../services/api";
 import { formatInr } from "../utils/format";
+import { Alert, Badge, Card, Page, PageHeader, PrimaryButton } from "../components/ui";
 
 const RAZORPAY_KEY_ID = import.meta.env.VITE_RAZORPAY_KEY_ID ?? "";
 
@@ -77,25 +78,24 @@ export function PlansPage() {
   const hasActiveDriverPlan = driverPlans.some((plan) => activePlan(plan.planType, plan.cadence));
 
   return (
-    <div className="mx-auto max-w-2xl px-6 py-12">
-      <h1 className="font-display text-3xl font-extrabold tracking-tight text-ink">Plans</h1>
-      <p className="mt-2 text-sm text-ink-soft">
-        Drivers need an active plan to post rides. Passengers can subscribe to waive the platform fee.
-      </p>
+    <Page width="lg">
+      <PageHeader
+        title="Plans"
+        subtitle="Drivers need an active plan to post rides. Passengers can subscribe to waive the platform fee."
+      />
 
       {loading ? (
-        <p className="mt-8 text-sm text-ink-faint">Loading…</p>
+        <div className="space-y-3">
+          <div className="skeleton h-32 rounded-3xl" />
+          <div className="skeleton h-32 rounded-3xl" />
+        </div>
       ) : (
         <>
-          <p className="mb-1 mt-8 text-xs font-bold uppercase tracking-wide text-ink-faint">Driver plans</p>
-          <div
-            className={`mb-4 rounded-2xl px-4 py-3 text-xs font-semibold ${
-              hasActiveDriverPlan ? "bg-brand-light text-brand-dark" : "bg-amber-50 text-amber-800"
-            }`}
-          >
+          <p className="mb-2 text-[10px] font-bold uppercase tracking-[0.14em] text-ink-faint">Driver plans</p>
+          <Alert tone={hasActiveDriverPlan ? "brand" : "amber"}>
             {hasActiveDriverPlan ? "You have an active driver plan." : "You need an active plan before you can post a ride."}
-          </div>
-          <div className="space-y-3">
+          </Alert>
+          <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
             {driverPlans.map((plan) => (
               <PlanCard
                 key={`${plan.planType}:${plan.cadence}`}
@@ -108,8 +108,8 @@ export function PlansPage() {
             ))}
           </div>
 
-          <p className="mb-1 mt-8 text-xs font-bold uppercase tracking-wide text-ink-faint">Passenger plan</p>
-          <div className="space-y-3">
+          <p className="mb-3 mt-10 text-[10px] font-bold uppercase tracking-[0.14em] text-ink-faint">Passenger plan</p>
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             {passengerPlans.map((plan) => (
               <PlanCard
                 key={`${plan.planType}:${plan.cadence}`}
@@ -125,7 +125,7 @@ export function PlansPage() {
           {error ? <p className="mt-4 text-sm text-red-600">{error}</p> : null}
         </>
       )}
-    </div>
+    </Page>
   );
 }
 
@@ -143,24 +143,19 @@ function PlanCard({
   onPurchase: () => void;
 }) {
   return (
-    <div className="rounded-2xl border border-line bg-white p-5 shadow-card">
-      <div className="flex items-start justify-between">
+    <Card className={`p-5 ${active ? "ring-2 ring-brand/30" : ""}`}>
+      <div className="flex items-start justify-between gap-3">
         <p className="text-sm font-bold text-ink">{label}</p>
-        <p className="text-lg font-extrabold text-brand">{formatInr(amountInr)}</p>
+        <p className="font-display text-xl font-extrabold text-brand">{formatInr(amountInr)}</p>
       </div>
       {active ? (
-        <p className="mt-2 inline-block rounded-full bg-brand-light px-2.5 py-1 text-[11px] font-bold text-brand-dark">
-          Active until {new Date(active.expiresAt as string).toLocaleDateString("en-IN")}
-        </p>
+        <div className="mt-3">
+          <Badge>Active until {new Date(active.expiresAt as string).toLocaleDateString("en-IN")}</Badge>
+        </div>
       ) : null}
-      <button
-        type="button"
-        onClick={onPurchase}
-        disabled={purchasing}
-        className="mt-4 w-full rounded-full bg-brand py-2.5 text-sm font-bold text-white shadow-card transition hover:bg-brand-dark disabled:opacity-60"
-      >
+      <PrimaryButton type="button" onClick={onPurchase} disabled={purchasing} className="mt-5 w-full">
         {purchasing ? "Processing…" : active ? "Renew" : "Subscribe"}
-      </button>
-    </div>
+      </PrimaryButton>
+    </Card>
   );
 }

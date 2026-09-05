@@ -2,15 +2,12 @@ import { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import type { TripType } from "@rideshare/types";
 import { matchingPost } from "../services/api";
-import { PlaceInput } from "../components/PlaceInput";
+import { SearchForm, toDateKey } from "../components/SearchForm";
 import { RideCard } from "../components/RideCard";
+import { Alert, Card, EmptyState, Page, PageHeader, PrimaryButton } from "../components/ui";
 import { useAuthStore } from "../store/authStore";
 import { useTripStore, type SearchMatch } from "../store/tripStore";
 import type { MapPlace } from "../services/places";
-
-function toDateKey(value: Date): string {
-  return value.toISOString().slice(0, 10);
-}
 
 function formatDateDisplay(value: Date): string {
   return value.toLocaleDateString("en-IN", { weekday: "short", day: "numeric", month: "short" });
@@ -42,6 +39,7 @@ interface MatchPayload {
 
 export function SearchPage() {
   const user = useAuthStore((state) => state.user);
+  const sessionToken = useAuthStore((state) => state.sessionToken);
   const matches = useTripStore((state) => state.matches);
   const setMatches = useTripStore((state) => state.setMatches);
   const setSelectedMatch = useTripStore((state) => state.setSelectedMatch);
@@ -143,71 +141,90 @@ export function SearchPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  const firstName = user?.name?.split(" ")[0];
+
   return (
-    <div className="mx-auto max-w-5xl px-6 py-12">
-      <h1 className="font-display text-3xl font-extrabold tracking-tight text-ink">
-        {user?.name ? `Where to, ${user.name.split(" ")[0]}?` : "Where to?"}
-      </h1>
-      <div className="mt-6 rounded-2xl border border-line bg-white p-5 shadow-card">
-        <div className="grid grid-cols-2 gap-x-4 gap-y-4 sm:grid-cols-[1.15fr_1.15fr_0.9fr_0.55fr]">
-          <PlaceInput label="From" placeholder="City or place" place={origin} onSelect={setOrigin} />
-          <PlaceInput label="To" placeholder="City or place" place={destination} onSelect={setDestination} />
-          <label className="text-left">
-            <span className="block text-[10px] font-bold uppercase tracking-wide text-ink-faint">Date</span>
-            <input
-              type="date"
-              value={date}
-              min={toDateKey(new Date())}
-              onChange={(e) => setDate(e.target.value)}
-              className="mt-1 w-full border-b-2 border-line bg-transparent py-1.5 text-sm font-semibold text-ink outline-none focus:border-brand"
-            />
-          </label>
-          <label className="text-left">
-            <span className="block text-[10px] font-bold uppercase tracking-wide text-ink-faint">Seats</span>
-            <input
-              type="number"
-              min={1}
-              max={4}
-              value={seats}
-              onChange={(e) => setSeats(Number(e.target.value))}
-              className="mt-1 w-full border-b-2 border-line bg-transparent py-1.5 text-sm font-semibold text-ink outline-none focus:border-brand"
-            />
-          </label>
-        </div>
-        {error ? <p className="mt-3 text-sm text-red-600">{error}</p> : null}
-        <button
-          type="button"
-          onClick={() => void search()}
-          disabled={searching}
-          className="mt-5 w-full rounded-xl bg-brand py-3 text-sm font-bold text-white shadow-card transition hover:-translate-y-0.5 hover:bg-brand-dark disabled:opacity-60"
-        >
-          {searching ? "Searching…" : "Search rides"}
-        </button>
-      </div>
+    <Page width="xl">
+      <PageHeader
+        title={firstName ? `Where to, ${firstName}?` : "Where to?"}
+        subtitle="Compare verified drivers, fares, and seats in one search."
+      />
+
+      <Card className="p-5 sm:p-6">
+        <SearchForm
+          origin={origin}
+          destination={destination}
+          date={date}
+          seats={seats}
+          onOrigin={setOrigin}
+          onDestination={setDestination}
+          onDate={setDate}
+          onSeats={setSeats}
+          onSubmit={() => void search()}
+          submitting={searching}
+          error={error}
+          showPopular
+          maxSeats={4}
+        />
+      </Card>
 
       {searched ? (
         <div className="mt-8">
           {searchNote ? (
-            <p className="mb-4 rounded-xl bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-800">{searchNote}</p>
+            <div className="mb-4">
+              <Alert>{searchNote}</Alert>
+            </div>
           ) : null}
-          {matches.length === 0 && !searching ? (
-            <p className="mt-10 text-center text-sm text-ink-faint">No rides found for this route yet.</p>
-          ) : (
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              {matches.map((trip) => (
-                <RideCard
-                  key={trip.id}
-                  trip={trip}
-                  onClick={() => {
-                    setSelectedMatch(trip);
-                    navigate(`/rides/${trip.id}`);
-                  }}
-                />
+          {searching ? (
+            <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+              {[0, 1, 2, 3].map((i) => (
+                <div key={i} className="skeleton h-40 rounded-3xl" />
               ))}
             </div>
+          ) : matches.length === 0 ? (
+            <EmptyState
+              title="No rides on this route yet"
+              body="Try a nearby date, or post the trip yourself if you're driving that way."
+              action={
+                <PrimaryButton type="button" onClick={() => navigate(sessionToken ? "/post" : "/login")}>
+                  Post a ride
+                </PrimaryButton>
+              }
+            />
+          ) : (
+            <>
+              <p className="mb-4 text-sm font-semibold text-ink-faint">
+                {matches.length} ride{matches.length === 1 ? "" : "s"} found
+              </p>
+              <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+                {matches.map((trip) => (
+                  <RideCard
+                    key={trip.id}
+                    trip={trip}
+                    onClick={() => {
+                      setSelectedMatch(trip);
+                      navigate(`/rides/${trip.id}`);
+                    }}
+                  />
+                ))}
+              </div>
+            </>
           )}
         </div>
-      ) : null}
-    </div>
+      ) : (
+        <div className="mt-10 grid grid-cols-1 gap-4 sm:grid-cols-3">
+          {[
+            { title: "Verified drivers", body: "Aadhaar, DL, and face-match before anyone drives." },
+            { title: "See the fare first", body: "Price per seat is locked in before you book." },
+            { title: "Tracked the whole way", body: "Live GPS and SOS on every confirmed trip." },
+          ].map((item) => (
+            <div key={item.title} className="rounded-3xl border border-line bg-white p-5 shadow-card">
+              <p className="font-display text-base font-extrabold text-ink">{item.title}</p>
+              <p className="mt-1 text-sm text-ink-soft">{item.body}</p>
+            </div>
+          ))}
+        </div>
+      )}
+    </Page>
   );
 }

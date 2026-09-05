@@ -3,6 +3,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import type { Gender } from "@rideshare/types";
 import { supabase } from "../lib/supabase";
 import { useAuthStore } from "../store/authStore";
+import { Card, fieldInputClass, Page, PageHeader, PrimaryButton, SegmentedControl } from "../components/ui";
 
 const GENDERS: Gender[] = ["male", "female", "other"];
 
@@ -40,44 +41,25 @@ export function ProfileSetupPage() {
   }
 
   return (
-    <div className="mx-auto max-w-sm px-6 py-16">
-      <h1 className="font-display text-3xl font-extrabold tracking-tight text-ink">A few details</h1>
-      <p className="mt-2 text-sm text-ink-soft">A name helps co-riders trust you.</p>
-      <div className="mt-6 rounded-2xl border border-line bg-white p-5 shadow-card">
+    <Page width="sm">
+      <PageHeader title="A few details" subtitle="A name helps co-riders trust you." />
+      <Card className="p-6">
         <label className="block">
-          <span className="text-[11px] font-bold uppercase tracking-wide text-ink-faint">Name</span>
+          <span className="text-[10px] font-bold uppercase tracking-[0.14em] text-ink-faint">Name</span>
           <input
             value={name}
             onChange={(e) => setName(e.target.value)}
             placeholder="Your full name"
-            className="mt-1 w-full border-b-2 border-line bg-transparent py-2 text-sm font-semibold text-ink outline-none focus:border-brand"
+            className={fieldInputClass}
           />
         </label>
-        <p className="mb-2 mt-5 text-[11px] font-bold uppercase tracking-wide text-ink-faint">Gender</p>
-        <div className="flex gap-2">
-          {GENDERS.map((value) => (
-            <button
-              key={value}
-              type="button"
-              onClick={() => setGender(value)}
-              className={`flex-1 rounded-full py-2.5 text-sm font-bold capitalize transition ${
-                gender === value ? "bg-brand text-white" : "bg-paper text-ink-soft"
-              }`}
-            >
-              {value}
-            </button>
-          ))}
-        </div>
-      </div>
+        <p className="mb-2 mt-5 text-[10px] font-bold uppercase tracking-[0.14em] text-ink-faint">Gender</p>
+        <SegmentedControl value={gender} options={GENDERS.map((value) => ({ value, label: value }))} onChange={setGender} capitalize />
+      </Card>
       {error ? <p className="mt-3 text-sm text-red-600">{error}</p> : null}
-      <button
-        type="button"
-        onClick={() => void save()}
-        disabled={saving}
-        className="mt-6 w-full rounded-full bg-brand py-3.5 text-sm font-bold text-white shadow-card transition hover:bg-brand-dark disabled:opacity-60"
-      >
+      <PrimaryButton type="button" onClick={() => void save()} disabled={saving} className="mt-6 w-full">
         {saving ? "Saving…" : "Continue"}
-      </button>
-    </div>
+      </PrimaryButton>
+    </Page>
   );
 }

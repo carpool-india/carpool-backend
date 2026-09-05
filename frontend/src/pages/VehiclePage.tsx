@@ -4,6 +4,7 @@ import { vehicleNumberSchema } from "@rideshare/utils";
 import { supabase } from "../lib/supabase";
 import { useAuthStore } from "../store/authStore";
 import { useDriverVehicles } from "../hooks/useDriverVehicles";
+import { Card, fieldInputClass, Page, PageHeader, PrimaryButton, SegmentedControl } from "../components/ui";
 
 export function VehiclePage() {
   const user = useAuthStore((state) => state.user);
@@ -59,48 +60,36 @@ export function VehiclePage() {
   }
 
   return (
-    <div className="mx-auto max-w-md px-6 py-12">
-      <h1 className="font-display text-3xl font-extrabold tracking-tight text-ink">Your vehicle</h1>
-      <p className="mt-2 text-sm text-ink-soft">Add your car or bike so you can start posting rides.</p>
+    <Page width="sm">
+      <PageHeader title="Your vehicle" subtitle="Add your car or bike so you can start posting rides." />
 
       {loading ? (
-        <p className="mt-8 text-sm text-ink-faint">Loading…</p>
+        <div className="skeleton h-56 rounded-3xl" />
       ) : (
-        <div className="mt-6 rounded-2xl border border-line bg-white p-6 shadow-card">
-          <div className="mb-4 flex gap-2 rounded-2xl bg-paper p-1">
-            {(["car", "bike"] as const).map((option) => (
-              <button
-                key={option}
-                type="button"
-                onClick={() => selectType(option)}
-                className={`flex-1 rounded-xl py-2.5 text-sm font-bold capitalize transition ${
-                  vehicleType === option ? "bg-white text-brand shadow-card" : "text-ink-soft"
-                }`}
-              >
-                {option}
-              </button>
-            ))}
-          </div>
-          <label className="block">
-            <span className="text-[11px] font-bold uppercase tracking-wide text-ink-faint">Registration number</span>
+        <Card className="p-6">
+          <SegmentedControl
+            value={vehicleType}
+            options={[
+              { value: "car" as const, label: "Car" },
+              { value: "bike" as const, label: "Bike" },
+            ]}
+            onChange={selectType}
+          />
+          <label className="mt-5 block">
+            <span className="text-[10px] font-bold uppercase tracking-[0.14em] text-ink-faint">Registration number</span>
             <input
               value={current.number}
               onChange={(e) => setNumber(e.target.value)}
               placeholder="TN09AB1234"
-              className="mt-1 w-full border-b-2 border-line bg-transparent py-2 text-sm font-semibold uppercase tracking-wide text-ink outline-none placeholder:font-normal placeholder:normal-case focus:border-brand"
+              className={`${fieldInputClass} uppercase tracking-wide placeholder:normal-case`}
             />
           </label>
           {error ? <p className="mt-3 text-sm text-red-600">{error}</p> : null}
-          <button
-            type="button"
-            onClick={() => void save()}
-            disabled={saving}
-            className="mt-5 w-full rounded-full bg-brand py-3 text-sm font-bold text-white shadow-card transition hover:bg-brand-dark disabled:opacity-60"
-          >
+          <PrimaryButton type="button" onClick={() => void save()} disabled={saving} className="mt-6 w-full">
             {saving ? "Saving…" : saved ? "Saved" : "Save vehicle"}
-          </button>
-        </div>
+          </PrimaryButton>
+        </Card>
       )}
-    </div>
+    </Page>
   );
 }

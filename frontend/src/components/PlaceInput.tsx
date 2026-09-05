@@ -69,7 +69,7 @@ export function PlaceInput({
 
   return (
     <div ref={wrapperRef} className="relative text-left">
-      <span className="block text-[10px] font-bold uppercase tracking-wide text-ink-faint">{label}</span>
+      <span className="block text-[10px] font-bold uppercase tracking-[0.14em] text-ink-faint">{label}</span>
       <input
         value={query}
         onChange={(e) => {
@@ -78,7 +78,7 @@ export function PlaceInput({
         }}
         onFocus={() => setOpen(true)}
         placeholder={placeholder}
-        className="mt-1 w-full border-b-2 border-line bg-transparent py-1.5 text-sm font-semibold text-ink placeholder:font-normal placeholder:text-ink-faint outline-none focus:border-brand"
+        className="mt-1 w-full border-b-2 border-line bg-transparent py-2 text-sm font-semibold text-ink placeholder:font-normal placeholder:text-ink-faint outline-none transition focus:border-brand"
       />
       {open && (predictions.length > 0 || loading) ? (
         <div className="absolute left-0 right-0 top-full z-30 mt-1 max-h-64 overflow-y-auto rounded-2xl border border-line bg-white py-1 shadow-floating">

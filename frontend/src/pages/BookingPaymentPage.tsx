@@ -4,6 +4,7 @@ import { SERVICE_FEE_RATE, type Booking, type PriceBreakdown } from "@rideshare/
 import { bookingPost, paymentPost } from "../services/api";
 import { useAuthStore } from "../store/authStore";
 import { useTripStore } from "../store/tripStore";
+import { Card, EmptyState, Page, PageHeader, PrimaryButton } from "../components/ui";
 
 const RAZORPAY_KEY_ID = import.meta.env.VITE_RAZORPAY_KEY_ID ?? "";
 
@@ -17,7 +18,19 @@ export function BookingPaymentPage() {
   const [error, setError] = useState<string | null>(null);
 
   if (!trip) {
-    return <p className="mx-auto max-w-md px-6 py-12 text-sm text-ink-faint">This ride is no longer available — search again.</p>;
+    return (
+      <Page width="sm">
+        <EmptyState
+          title="This ride is no longer available"
+          body="Search again to pick another seat."
+          action={
+            <PrimaryButton type="button" onClick={() => navigate("/search")}>
+              Search rides
+            </PrimaryButton>
+          }
+        />
+      </Page>
+    );
   }
 
   const seatsBooked = 1;
@@ -79,40 +92,32 @@ export function BookingPaymentPage() {
   }
 
   return (
-    <div className="mx-auto max-w-md px-6 py-12">
-      <p className="text-xs font-bold uppercase tracking-wide text-ink-faint">
-        {trip.originName} → {trip.destinationName}
-      </p>
-      <h1 className="mt-1 font-display text-2xl font-extrabold tracking-tight text-ink">Confirm booking</h1>
+    <Page width="sm">
+      <PageHeader kicker={`${trip.originName} → ${trip.destinationName}`} title="Confirm booking" subtitle="Pay the platform fee now. Seat fare goes to your driver." />
 
-      <div className="mt-6 rounded-2xl border border-line bg-white p-5 shadow-card">
+      <Card className="p-6">
         <div className="flex items-center justify-between text-sm">
           <span className="text-ink-soft">Seat fare (paid to driver directly)</span>
           <span className="font-bold text-ink">₹{breakdown.seatFare}</span>
         </div>
-        <div className="mt-2 flex items-center justify-between text-sm">
+        <div className="mt-3 flex items-center justify-between text-sm">
           <span className="text-ink-soft">Platform fee</span>
           <span className="font-bold text-ink">₹{breakdown.serviceFee.toFixed(2)}</span>
         </div>
-        <div className="mt-4 flex items-center justify-between border-t border-line pt-4 text-base">
+        <div className="mt-5 flex items-center justify-between border-t border-line pt-4">
           <span className="font-bold text-ink">Pay now</span>
-          <span className="font-extrabold text-ink">₹{breakdown.totalAmount.toFixed(2)}</span>
+          <span className="font-display text-2xl font-extrabold text-ink">₹{breakdown.totalAmount.toFixed(2)}</span>
         </div>
         <p className="mt-3 text-xs leading-relaxed text-ink-faint">
           Only the platform fee is charged now, via Razorpay. The ride fare itself is paid directly to your driver.
         </p>
-      </div>
+      </Card>
 
       {error ? <p className="mt-3 text-sm text-red-600">{error}</p> : null}
 
-      <button
-        type="button"
-        onClick={() => void pay()}
-        disabled={paying}
-        className="mt-6 w-full rounded-full bg-brand py-3.5 text-sm font-bold text-white shadow-card transition hover:bg-brand-dark disabled:opacity-60"
-      >
+      <PrimaryButton type="button" onClick={() => void pay()} disabled={paying} className="mt-6 w-full">
         {paying ? "Opening payment…" : "Pay & confirm"}
-      </button>
-    </div>
+      </PrimaryButton>
+    </Page>
   );
 }

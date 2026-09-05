@@ -1,8 +1,8 @@
-import { useState, type FormEvent } from "react";
-import { useNavigate } from "react-router-dom";
+import { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import { Icon, icons } from "../components/Icon";
 import { Reveal } from "../components/Reveal";
-import { PlaceInput } from "../components/PlaceInput";
+import { POPULAR_ROUTES, SearchForm, toDateKey } from "../components/SearchForm";
 import { resolvePlace, type MapPlace } from "../services/places";
 
 const pillars = [
@@ -70,14 +70,34 @@ const steps = [
   { step: "01", title: "Enter your route", body: "Tell us where you're starting and where you're headed." },
   { step: "02", title: "Pick a ride", body: "Compare available drivers, vehicles, and fares in real time." },
   { step: "03", title: "Confirm & pay", body: "Pay securely by UPI or card — funds release after the trip." },
-  { step: "04", title: "Ride safely", body: "Check the driver and vehicle details, chat if you need to, and track the journey live." },
+  { step: "04", title: "Ride safely", body: "Check the driver and vehicle, chat if you need to, and track the journey live." },
 ];
 
-const popularRoutes: [string, string][] = [
-  ["Chennai", "Bengaluru"],
-  ["Chennai", "Pondicherry"],
-  ["Coimbatore", "Chennai"],
-  ["Madurai", "Chennai"],
+const cities = ["Chennai", "Bengaluru", "Coimbatore", "Madurai", "Pondicherry", "Hyderabad", "Kochi", "Tiruchirappalli", "Salem", "Vellore"];
+
+const popularRouteCards = [
+  { from: "Chennai", to: "Bengaluru", time: "5–6 hrs", hint: "IT corridor favourite" },
+  { from: "Chennai", to: "Pondicherry", time: "3 hrs", hint: "Weekend getaway" },
+  { from: "Coimbatore", to: "Chennai", time: "7 hrs", hint: "Hill-to-coast" },
+  { from: "Madurai", to: "Chennai", time: "7–8 hrs", hint: "Temple city run" },
+];
+
+const testimonials = [
+  {
+    quote: "I used to hesitate sharing a cab out of the city. Seeing KYC and a trust score before I book changed that overnight.",
+    name: "Priya S.",
+    role: "Rider · Chennai",
+  },
+  {
+    quote: "Empty seats on my Coimbatore run now actually pay for fuel. Passengers are verified, and payout lands after the trip.",
+    name: "Karthik M.",
+    role: "Driver-partner · Coimbatore",
+  },
+  {
+    quote: "Live tracking plus a real SOS button is what I needed to let my parents know I was on the highway. Simple, and it works.",
+    name: "Ananya R.",
+    role: "Rider · Bengaluru",
+  },
 ];
 
 const faqs = [
@@ -103,10 +123,6 @@ const faqs = [
   },
 ];
 
-function toDateKey(value: Date): string {
-  return value.toISOString().slice(0, 10);
-}
-
 function SearchWidget() {
   const navigate = useNavigate();
   const [origin, setOrigin] = useState<MapPlace | null>(null);
@@ -115,8 +131,7 @@ function SearchWidget() {
   const [seats, setSeats] = useState(1);
   const [error, setError] = useState<string | null>(null);
 
-  function handleSearch(e: FormEvent) {
-    e.preventDefault();
+  function handleSearch() {
     if (!origin || !destination) {
       setError("Choose both a from and to location");
       return;
@@ -125,51 +140,36 @@ function SearchWidget() {
     navigate("/search", { state: { origin, destination, date, seats } });
   }
 
+  async function pickPopular(from: string, to: string) {
+    const [a, b] = await Promise.all([resolvePlace(`local:${from.toLowerCase()}`), resolvePlace(`local:${to.toLowerCase()}`)]);
+    setOrigin(a);
+    setDestination(b);
+  }
+
   return (
-    <div className="mt-8 rounded-2xl border border-line bg-white p-4 shadow-floating sm:p-5">
-      <form onSubmit={handleSearch} className="grid grid-cols-2 gap-x-4 gap-y-4 sm:grid-cols-[1.15fr_1.15fr_0.9fr_0.55fr]">
-        <PlaceInput label="From" placeholder="City or place" place={origin} onSelect={setOrigin} />
-        <PlaceInput label="To" placeholder="City or place" place={destination} onSelect={setDestination} />
-        <label className="text-left">
-          <span className="block text-[10px] font-bold uppercase tracking-wide text-ink-faint">Date</span>
-          <input
-            type="date"
-            value={date}
-            min={toDateKey(new Date())}
-            onChange={(e) => setDate(e.target.value)}
-            className="mt-1 w-full border-b-2 border-line bg-transparent py-1.5 text-sm font-semibold text-ink outline-none focus:border-brand"
-          />
-        </label>
-        <label className="text-left">
-          <span className="block text-[10px] font-bold uppercase tracking-wide text-ink-faint">Seats</span>
-          <input
-            type="number"
-            min={1}
-            max={6}
-            value={seats}
-            onChange={(e) => setSeats(Number(e.target.value))}
-            className="mt-1 w-full border-b-2 border-line bg-transparent py-1.5 text-sm font-semibold text-ink outline-none focus:border-brand"
-          />
-        </label>
-        <button
-          type="submit"
-          className="col-span-2 rounded-xl bg-brand py-3 text-sm font-bold text-white shadow-card transition hover:-translate-y-0.5 hover:bg-brand-dark sm:col-span-4"
-        >
-          Search rides
-        </button>
-      </form>
-      {error ? <p className="mt-3 text-sm text-red-600">{error}</p> : null}
-      <div className="mt-4 flex flex-wrap items-center gap-2 border-t border-line pt-4">
-        <span className="text-xs font-semibold text-ink-faint">Popular:</span>
-        {popularRoutes.map(([a, b]) => (
+    <div className="mt-8">
+      <div className="rounded-[1.75rem] bg-white p-4 shadow-[0_30px_80px_-24px_rgba(0,0,0,0.55)] sm:p-5">
+        <SearchForm
+          origin={origin}
+          destination={destination}
+          date={date}
+          seats={seats}
+          onOrigin={setOrigin}
+          onDestination={setDestination}
+          onDate={setDate}
+          onSeats={setSeats}
+          onSubmit={handleSearch}
+          error={error}
+        />
+      </div>
+      <div className="mt-4 flex flex-wrap items-center gap-2">
+        <span className="text-xs font-semibold text-white/70">Popular</span>
+        {POPULAR_ROUTES.map(([a, b]) => (
           <button
             key={`${a}-${b}`}
             type="button"
-            onClick={() => {
-              void resolvePlace(`local:${a.toLowerCase()}`).then(setOrigin);
-              void resolvePlace(`local:${b.toLowerCase()}`).then(setDestination);
-            }}
-            className="rounded-full border border-line px-3 py-1 text-xs font-semibold text-ink-soft transition hover:border-brand hover:text-brand"
+            onClick={() => void pickPopular(a, b)}
+            className="rounded-full border border-white/25 bg-white/10 px-3 py-1 text-xs font-semibold text-white backdrop-blur transition hover:bg-white hover:text-ink"
           >
             {a} → {b}
           </button>
@@ -179,152 +179,71 @@ function SearchWidget() {
   );
 }
 
-function PhoneMock() {
-  return (
-    <div className="relative mx-auto w-[280px] sm:w-[300px]">
-      <div className="absolute -inset-6 -z-10 rounded-[3rem] bg-brand/10 blur-2xl" aria-hidden="true" />
-      <svg
-        className="pointer-events-none absolute -inset-x-16 -inset-y-10 -z-10 hidden sm:block"
-        viewBox="0 0 420 480"
-        fill="none"
-        aria-hidden="true"
-      >
-        <path
-          d="M20 40c80 0 60 90 140 90s60-100 150-80 90 160 40 220-180 30-170 130"
-          stroke="#0F766E"
-          strokeOpacity="0.15"
-          strokeWidth="3"
-          strokeDasharray="2 14"
-          strokeLinecap="round"
-        />
-      </svg>
-      <div className="rounded-[2.4rem] border border-line bg-ink p-2.5 shadow-floating">
-        <div className="overflow-hidden rounded-[2rem] bg-paper-card">
-          <div className="flex items-center justify-between bg-brand px-5 pb-8 pt-4 text-white">
-            <div className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-widest text-teal-100">
-              <span className="h-1.5 w-1.5 rounded-full bg-white" />
-              Live
-            </div>
-            <span className="text-[11px] font-semibold text-teal-100">9:41</span>
-          </div>
-
-          <div className="-mt-5 space-y-3 px-4 pb-5">
-            <div className="rounded-2xl bg-white p-3 shadow-card">
-              <div className="flex items-center gap-2.5">
-                <span className="h-2 w-2 shrink-0 rounded-full bg-brand" />
-                <span className="text-[12px] font-semibold text-ink">Thoraipakkam</span>
-              </div>
-              <div className="my-1.5 ml-[3px] h-3 border-l-2 border-dotted border-line" />
-              <div className="flex items-center gap-2.5">
-                <span className="h-2 w-2 shrink-0 rounded-full bg-accent" />
-                <span className="text-[12px] font-semibold text-ink">Velachery, Chennai</span>
-              </div>
-            </div>
-
-            <div className="rounded-2xl border border-line bg-white p-3 shadow-card">
-              <div className="flex items-center gap-2.5">
-                <div className="flex h-9 w-9 items-center justify-center rounded-full bg-brand-light text-sm font-bold text-brand-dark">
-                  A
-                </div>
-                <div className="min-w-0 flex-1">
-                  <p className="truncate text-[12px] font-bold text-ink">Arjun · Swift Dzire</p>
-                  <p className="text-[11px] text-ink-faint">TN 09 · 2 seats left</p>
-                </div>
-                <span className="rounded-full bg-brand-light px-2 py-0.5 text-[10px] font-extrabold text-brand-dark">
-                  92 Trust
-                </span>
-              </div>
-              <div className="mt-2.5 flex items-center justify-between border-t border-line pt-2.5">
-                <span className="relative flex items-center gap-1.5 text-[11px] font-semibold text-brand">
-                  <span className="gps-dot relative h-1.5 w-1.5 rounded-full bg-brand" />
-                  Tracking live
-                </span>
-                <span className="text-[13px] font-extrabold text-ink">₹340</span>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-2.5 rounded-2xl border border-line bg-white p-3 shadow-card">
-              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-brand-light text-xs font-bold text-brand-dark">
-                A
-              </div>
-              <div className="min-w-0 flex-1">
-                <p className="truncate text-[11px] font-bold text-ink">Arjun</p>
-                <p className="truncate text-[11px] text-ink-faint">On my way, 3 mins away</p>
-              </div>
-              <Icon path={icons.chat} className="h-4 w-4 shrink-0 text-brand" />
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div className="absolute -right-8 top-16 hidden rotate-2 rounded-2xl border border-line bg-white p-3 shadow-card sm:block">
-        <div className="flex items-center gap-2">
-          <Icon path={icons.sos} className="h-4 w-4 text-accent-dark" />
-          <p className="text-[11px] font-bold text-ink">SOS · one tap away</p>
-        </div>
-      </div>
-    </div>
-  );
-}
-
 function Hero() {
   return (
-    <section className="relative overflow-hidden bg-mesh">
-      <div className="mx-auto grid max-w-6xl items-start gap-16 px-6 pb-20 pt-14 sm:pt-20 lg:grid-cols-[1.05fr_0.95fr] lg:gap-10">
-        <div className="text-center lg:text-left">
-          <span className="inline-flex items-center gap-2 rounded-full border border-line bg-white px-4 py-1.5 text-xs font-bold uppercase tracking-wide text-brand-dark shadow-card">
-            <span className="h-1.5 w-1.5 rounded-full bg-brand" />
-            Now onboarding riders and drivers across India
+    <section className="relative min-h-[100svh] overflow-hidden bg-ink">
+      <img src="/images/hero-highway.png" alt="" className="absolute inset-0 h-full w-full object-cover" />
+      <div className="hero-scrim absolute inset-0" />
+      <div className="relative z-10 mx-auto flex min-h-[100svh] max-w-6xl flex-col justify-center px-6 pb-16 pt-28 sm:px-8">
+        <div className="max-w-3xl">
+          <span className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-4 py-1.5 text-xs font-bold uppercase tracking-[0.16em] text-white backdrop-blur">
+            <span className="h-1.5 w-1.5 rounded-full bg-accent" />
+            Onboarding across India
           </span>
-          <h1 className="mt-6 font-display text-4xl font-extrabold leading-[1.08] tracking-tight text-ink sm:text-5xl lg:text-[3.25rem]">
-            Verified rides,{" "}
-            <span className="relative inline-block">
-              honest fares
-              <svg
-                className="absolute -bottom-1.5 left-0 h-2.5 w-full"
-                viewBox="0 0 200 12"
-                preserveAspectRatio="none"
-                aria-hidden="true"
-              >
-                <path d="M2 8c30-8 60-8 90 0s70 8 106 0" fill="none" stroke="#F0A93C" strokeWidth="5" strokeLinecap="round" />
-              </svg>
-            </span>
-            , safer journeys.
+          <h1 className="mt-6 font-display text-4xl font-extrabold leading-[1.05] tracking-tight text-white sm:text-6xl lg:text-[4.15rem]">
+            Go further.
+            <br />
+            Ride verified.
           </h1>
-          <p className="mx-auto mt-5 max-w-xl text-lg leading-relaxed text-ink-soft lg:mx-0">
-            Tell us your route and we'll match you with KYC-verified drivers — live tracking and
-            escrow-protected payments on every trip.
+          <p className="mt-5 max-w-xl text-lg leading-relaxed text-white/80">
+            Intercity and local seats with KYC-checked drivers, escrow-protected UPI, and a safety desk on every trip.
           </p>
           <SearchWidget />
-          <p className="mt-4 text-sm font-semibold text-ink-soft">
+          <p className="mt-5 text-sm font-semibold text-white/75">
             Driving instead?{" "}
-            <a href="#drive" className="text-brand underline-offset-2 hover:underline">
-              Share your ride and cut your costs →
+            <a href="#drive" className="text-accent underline-offset-2 hover:underline">
+              Share empty seats and cut your costs →
             </a>
           </p>
-          <div className="mt-8 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-xs font-semibold text-ink-faint lg:justify-start">
-            <span>Aadhaar + DL verified</span>
-            <span className="hidden h-1 w-1 rounded-full bg-line sm:block" />
-            <span>UPI escrow payments</span>
-            <span className="hidden h-1 w-1 rounded-full bg-line sm:block" />
-            <span>24×7 safety desk</span>
-          </div>
         </div>
-        <Reveal className="flex justify-center">
-          <PhoneMock />
-        </Reveal>
+        <div className="mt-10 flex flex-wrap gap-3">
+          {["Aadhaar + DL verified", "UPI escrow", "Live GPS", "24×7 SOS"].map((item) => (
+            <span
+              key={item}
+              className="rounded-full border border-white/15 bg-black/25 px-4 py-2 text-xs font-bold uppercase tracking-wide text-white/90 backdrop-blur"
+            >
+              {item}
+            </span>
+          ))}
+        </div>
       </div>
     </section>
   );
 }
 
+function CityMarquee() {
+  const loop = [...cities, ...cities];
+  return (
+    <div className="overflow-hidden border-y border-line/70 bg-white py-4">
+      <div className="marquee-track flex w-max gap-10 whitespace-nowrap px-6 text-sm font-bold text-ink-faint">
+        {loop.map((city, i) => (
+          <span key={`${city}-${i}`} className="inline-flex items-center gap-10">
+            <span>{city}</span>
+            <span className="h-1 w-1 rounded-full bg-brand/40" />
+          </span>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function Pillars() {
   return (
-    <section className="border-t border-line/70 bg-paper-card py-14">
-      <div className="mx-auto grid max-w-6xl grid-cols-1 gap-10 px-6 sm:grid-cols-3">
+    <section className="bg-paper-card py-16">
+      <div className="mx-auto grid max-w-6xl grid-cols-1 gap-8 px-6 sm:grid-cols-3">
         {pillars.map((p, i) => (
-          <Reveal key={p.title} delay={i * 80} className="text-center sm:text-left">
-            <div className="mx-auto flex h-11 w-11 items-center justify-center rounded-full bg-brand-light text-brand-dark sm:mx-0">
+          <Reveal key={p.title} delay={i * 80} className="rounded-3xl border border-line/80 bg-paper p-6 text-center sm:text-left">
+            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-brand text-white sm:mx-0">
               <Icon path={p.icon} />
             </div>
             <h3 className="mt-4 font-display text-lg font-extrabold text-ink">{p.title}</h3>
@@ -341,17 +260,18 @@ function Features() {
     <section id="features" className="border-t border-line/70 py-20">
       <div className="mx-auto max-w-6xl px-6">
         <Reveal className="mx-auto max-w-2xl text-center">
-          <h2 className="font-display text-3xl font-extrabold tracking-tight text-ink">Built for trust, not just speed</h2>
+          <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-brand">Why RideShare</p>
+          <h2 className="mt-2 font-display text-3xl font-extrabold tracking-tight text-ink sm:text-4xl">Built for trust, not just speed</h2>
           <p className="mt-3 text-ink-soft">
-            Every part of the ride — booking, payment, pickup, and the trip itself — is designed around
-            verifying who you're riding with.
+            Every part of the ride — booking, payment, pickup, and the trip itself — is designed around verifying who you're riding
+            with.
           </p>
         </Reveal>
         <div className="mt-12 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
           {features.map((feature, i) => (
             <Reveal key={feature.title} delay={(i % 4) * 60}>
-              <div className="h-full rounded-2xl border border-line bg-paper-card p-6 shadow-card transition hover:-translate-y-1 hover:shadow-floating">
-                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-brand-light text-brand-dark">
+              <div className="h-full rounded-3xl border border-line bg-paper-card p-6 shadow-card transition hover:-translate-y-1 hover:shadow-floating">
+                <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-brand-light text-brand-dark">
                   <Icon path={feature.icon} />
                 </div>
                 <h3 className="mt-4 text-base font-bold text-ink">{feature.title}</h3>
@@ -370,14 +290,11 @@ function HowItWorks() {
     <section id="how-it-works" className="border-t border-line/70 bg-paper-card py-20">
       <div className="mx-auto max-w-6xl px-6">
         <Reveal className="mx-auto max-w-2xl text-center">
-          <h2 className="font-display text-3xl font-extrabold tracking-tight text-ink">How it works</h2>
+          <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-brand">Four steps</p>
+          <h2 className="mt-2 font-display text-3xl font-extrabold tracking-tight text-ink sm:text-4xl">How it works</h2>
         </Reveal>
         <div className="relative mt-14 grid grid-cols-1 gap-10 sm:grid-cols-2 lg:grid-cols-4">
-          <div
-            className="absolute left-0 right-0 top-5 hidden h-px bg-line lg:block"
-            aria-hidden="true"
-            style={{ marginInline: "12.5%" }}
-          />
+          <div className="absolute left-0 right-0 top-5 hidden h-px bg-line lg:block" aria-hidden="true" style={{ marginInline: "12.5%" }} />
           {steps.map((item, i) => (
             <Reveal key={item.step} delay={i * 80} className="relative text-center lg:text-left">
               <span className="relative z-10 mx-auto flex h-10 w-10 items-center justify-center rounded-full border-2 border-brand bg-paper-card text-sm font-extrabold text-brand lg:mx-0">
@@ -385,6 +302,54 @@ function HowItWorks() {
               </span>
               <h3 className="mt-4 text-base font-bold text-ink">{item.title}</h3>
               <p className="mt-1 text-sm leading-relaxed text-ink-soft">{item.body}</p>
+            </Reveal>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function PopularRoutes() {
+  const navigate = useNavigate();
+
+  async function go(from: string, to: string) {
+    const [origin, destination] = await Promise.all([
+      resolvePlace(`local:${from.toLowerCase()}`),
+      resolvePlace(`local:${to.toLowerCase()}`),
+    ]);
+    navigate("/search", { state: { origin, destination, date: toDateKey(new Date()), seats: 1 } });
+  }
+
+  return (
+    <section className="border-t border-line/70 py-20">
+      <div className="mx-auto max-w-6xl px-6">
+        <Reveal className="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-end">
+          <div>
+            <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-brand">Go somewhere</p>
+            <h2 className="mt-2 font-display text-3xl font-extrabold tracking-tight text-ink">Popular routes</h2>
+          </div>
+          <Link to="/search" className="text-sm font-bold text-brand hover:underline">
+            Search any city →
+          </Link>
+        </Reveal>
+        <div className="mt-10 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          {popularRouteCards.map((route, i) => (
+            <Reveal key={`${route.from}-${route.to}`} delay={i * 60}>
+              <button
+                type="button"
+                onClick={() => void go(route.from, route.to)}
+                className="group relative w-full overflow-hidden rounded-3xl border border-line bg-white p-5 text-left shadow-card transition hover:-translate-y-1 hover:shadow-floating"
+              >
+                <span className="absolute inset-y-0 left-0 w-1.5 bg-gradient-to-b from-brand to-accent" />
+                <p className="text-[11px] font-bold uppercase tracking-wide text-ink-faint">{route.hint}</p>
+                <p className="mt-3 font-display text-xl font-extrabold text-ink">
+                  {route.from}
+                  <span className="mx-1.5 text-brand">→</span>
+                  {route.to}
+                </p>
+                <p className="mt-2 text-sm font-semibold text-ink-soft">{route.time}</p>
+              </button>
             </Reveal>
           ))}
         </div>
@@ -401,28 +366,30 @@ const driverPerks = [
 
 function DriverBand() {
   return (
-    <section id="drive" className="border-t border-line/70 bg-ink py-20">
-      <div className="mx-auto grid max-w-6xl items-center gap-12 px-6 lg:grid-cols-[1.1fr_0.9fr]">
+    <section id="drive" className="relative overflow-hidden border-t border-line/70 bg-ink py-24">
+      <img src="/images/hero-highway.png" alt="" className="absolute inset-0 h-full w-full object-cover opacity-30" />
+      <div className="absolute inset-0 bg-gradient-to-r from-ink via-ink/90 to-ink/70" />
+      <div className="relative mx-auto grid max-w-6xl items-center gap-12 px-6 lg:grid-cols-[1.1fr_0.9fr]">
         <Reveal className="text-center lg:text-left">
-          <h2 className="font-display text-3xl font-extrabold tracking-tight text-white">
-            Share your ride. Cut your costs.
-          </h2>
+          <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-teal-200">For drivers</p>
+          <h2 className="mt-2 font-display text-3xl font-extrabold tracking-tight text-white sm:text-4xl">Share your ride. Cut your costs.</h2>
           <p className="mx-auto mt-3 max-w-xl text-white/70 lg:mx-0">
-            Got empty seats on a trip you're already making? Publish your ride and let verified
-            passengers split the fuel and toll cost with you.
+            Got empty seats on a trip you're already making? Publish your ride and let verified passengers split the fuel and toll
+            cost with you.
           </p>
-          <a
-            href="#contact"
-            className="mt-6 inline-block rounded-full bg-brand px-6 py-3 text-sm font-bold text-white shadow-card transition hover:-translate-y-0.5 hover:bg-brand-dark"
+          <Link
+            to="/login"
+            className="mt-6 inline-flex items-center gap-2 rounded-full bg-brand px-6 py-3 text-sm font-bold text-white shadow-card transition hover:-translate-y-0.5 hover:bg-teal-700"
           >
             Become a driver-partner
-          </a>
+            <Icon path={icons.arrowRight} className="h-4 w-4" />
+          </Link>
         </Reveal>
-        <Reveal delay={100} className="rounded-2xl border border-white/10 bg-white/5 p-6">
+        <Reveal delay={100} className="rounded-3xl border border-white/10 bg-white/5 p-6 backdrop-blur">
           <ul className="space-y-4">
             {driverPerks.map((perk) => (
               <li key={perk.text} className="flex items-center gap-3 text-sm text-white/85">
-                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-white/10 text-teal-300">
+                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-white/10 text-teal-200">
                   <Icon path={perk.icon} className="h-4 w-4" />
                 </span>
                 {perk.text}
@@ -435,17 +402,43 @@ function DriverBand() {
   );
 }
 
+function Testimonials() {
+  return (
+    <section className="border-t border-line/70 py-20">
+      <div className="mx-auto max-w-6xl px-6">
+        <Reveal className="mx-auto max-w-2xl text-center">
+          <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-brand">From the road</p>
+          <h2 className="mt-2 font-display text-3xl font-extrabold tracking-tight text-ink sm:text-4xl">Riders and drivers, both covered</h2>
+        </Reveal>
+        <div className="mt-12 grid grid-cols-1 gap-5 md:grid-cols-3">
+          {testimonials.map((item, i) => (
+            <Reveal key={item.name} delay={i * 80}>
+              <figure className="flex h-full flex-col rounded-3xl border border-line bg-white p-6 shadow-card">
+                <Icon path={icons.sparkle} className="h-5 w-5 text-accent" />
+                <blockquote className="mt-4 flex-1 text-sm leading-relaxed text-ink-soft">“{item.quote}”</blockquote>
+                <figcaption className="mt-5 border-t border-line pt-4">
+                  <p className="text-sm font-bold text-ink">{item.name}</p>
+                  <p className="text-xs font-semibold text-ink-faint">{item.role}</p>
+                </figcaption>
+              </figure>
+            </Reveal>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
 function FAQItem({ q, a, isOpen, onToggle }: { q: string; a: string; isOpen: boolean; onToggle: () => void }) {
   return (
     <div className="border-b border-line py-5">
       <button type="button" onClick={onToggle} className="flex w-full items-center justify-between gap-4 text-left">
         <span className="font-display text-base font-bold text-ink">{q}</span>
-        <Icon
-          path={icons.plus}
-          className={`h-5 w-5 shrink-0 text-brand transition-transform duration-200 ${isOpen ? "rotate-45" : ""}`}
-        />
+        <Icon path={icons.plus} className={`h-5 w-5 shrink-0 text-brand transition-transform duration-200 ${isOpen ? "rotate-45" : ""}`} />
       </button>
-      {isOpen && <p className="mt-3 max-w-2xl text-sm leading-relaxed text-ink-soft">{a}</p>}
+      <div className={`grid overflow-hidden transition-all duration-200 ${isOpen ? "mt-3 grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0"}`}>
+        <p className="overflow-hidden max-w-2xl text-sm leading-relaxed text-ink-soft">{a}</p>
+      </div>
     </div>
   );
 }
@@ -453,10 +446,11 @@ function FAQItem({ q, a, isOpen, onToggle }: { q: string; a: string; isOpen: boo
 function FAQ() {
   const [openIndex, setOpenIndex] = useState<number | null>(0);
   return (
-    <section id="faq" className="border-t border-line/70 py-20">
+    <section id="faq" className="border-t border-line/70 bg-paper-card py-20">
       <div className="mx-auto max-w-3xl px-6">
         <Reveal className="text-center">
-          <h2 className="font-display text-3xl font-extrabold tracking-tight text-ink">Common questions</h2>
+          <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-brand">Support</p>
+          <h2 className="mt-2 font-display text-3xl font-extrabold tracking-tight text-ink">Common questions</h2>
         </Reveal>
         <div className="mt-10">
           {faqs.map((item, i) => (
@@ -478,7 +472,6 @@ function StoreBadge({ store }: { store: "apple" | "google" }) {
   const isApple = store === "apple";
   return (
     <a
-      // TODO: replace "#" with the real App Store / Play Store listing link once published.
       href="#"
       onClick={(e) => e.preventDefault()}
       aria-disabled="true"
@@ -503,13 +496,13 @@ function StoreBadge({ store }: { store: "apple" | "google" }) {
 
 function Download() {
   return (
-    <section id="download" className="border-t border-line/70 bg-paper-card py-20">
+    <section id="download" className="border-t border-line/70 py-20">
       <div className="mx-auto flex max-w-6xl flex-col items-center gap-10 px-6 text-center lg:flex-row lg:items-center lg:justify-between lg:text-left">
         <Reveal className="max-w-lg">
           <h2 className="font-display text-3xl font-extrabold tracking-tight text-ink">Take RideShare India with you</h2>
           <p className="mt-3 text-ink-soft">
-            Book, track, and pay for every ride from your phone. The app is on its way to both stores —
-            these links go live the moment it lands.
+            Book, track, and pay for every ride from your phone. The app is on its way to both stores — these links go live the
+            moment it lands.
           </p>
         </Reveal>
         <Reveal delay={80} className="flex flex-wrap items-center justify-center gap-4">
@@ -527,24 +520,31 @@ function Download() {
   );
 }
 
-function Contact() {
+function FinalCta() {
   return (
-    <section id="contact" className="border-t border-line/70 bg-ink py-20">
-      <div className="mx-auto max-w-3xl px-6 text-center">
+    <section id="contact" className="relative overflow-hidden border-t border-line/70 bg-ink py-24">
+      <img src="/images/auth-night-drive.png" alt="" className="absolute inset-0 h-full w-full object-cover opacity-25" />
+      <div className="absolute inset-0 bg-ink/80" />
+      <div className="relative mx-auto max-w-3xl px-6 text-center">
         <Reveal>
-          <h2 className="font-display text-3xl font-extrabold tracking-tight text-white">
-            Ready to ride, or ready to drive?
-          </h2>
+          <h2 className="font-display text-3xl font-extrabold tracking-tight text-white sm:text-4xl">Ready to ride, or ready to drive?</h2>
           <p className="mt-3 text-white/70">
-            Reach out and we'll get you set up — as a rider looking for verified trips, or a driver-partner
-            ready to onboard.
+            Search a verified trip in seconds, or publish the seats you're already driving.
           </p>
-          <a
-            href="mailto:hello@rideshareindia.example"
-            className="mt-8 inline-block rounded-full bg-brand px-6 py-3 text-sm font-bold text-white shadow-card transition hover:bg-brand-dark"
-          >
-            hello@rideshareindia.example
-          </a>
+          <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
+            <Link
+              to="/search"
+              className="inline-flex items-center gap-2 rounded-full bg-brand px-6 py-3 text-sm font-bold text-white shadow-card transition hover:bg-teal-700"
+            >
+              Find a ride
+            </Link>
+            <Link
+              to="/login"
+              className="inline-flex items-center gap-2 rounded-full bg-white px-6 py-3 text-sm font-bold text-ink transition hover:bg-brand-light"
+            >
+              Log in
+            </Link>
+          </div>
         </Reveal>
       </div>
     </section>
@@ -555,13 +555,16 @@ export function LandingPage() {
   return (
     <>
       <Hero />
+      <CityMarquee />
       <Pillars />
-      <Features />
       <HowItWorks />
+      <PopularRoutes />
+      <Features />
       <DriverBand />
+      <Testimonials />
       <FAQ />
       <Download />
-      <Contact />
+      <FinalCta />
     </>
   );
 }

@@ -1,56 +1,35 @@
 import { useState } from "react";
-import { Link, NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
+import { NavLink, Outlet, useNavigate } from "react-router-dom";
 import { Icon, icons } from "../components/Icon";
+import { Logo } from "../components/Logo";
+import { Avatar } from "../components/ui";
 import { useAuthStore } from "../store/authStore";
 
 const NAV_ITEMS = [
   { to: "/search", label: "Search", icon: icons.search },
-  { to: "/trips", label: "My Trips", icon: icons.calendar },
-  { to: "/post", label: "Post a Ride", icon: icons.plus },
+  { to: "/trips", label: "My trips", icon: icons.calendar },
+  { to: "/post", label: "Post a ride", icon: icons.plus },
   { to: "/vehicle", label: "Vehicle", icon: icons.car },
   { to: "/plans", label: "Plans", icon: icons.wallet },
   { to: "/profile", label: "Profile", icon: icons.person },
 ];
 
-const SOON_ITEMS = ["KYC Documents", "Payments", "Emergency Contacts", "Help"];
-
-const PAGE_META: Record<string, { title: string; subtitle: string }> = {
-  "/search": { title: "Search", subtitle: "Find a ride going your way" },
-  "/trips": { title: "My Trips", subtitle: "Rides you've booked or posted" },
-  "/post": { title: "Post a Ride", subtitle: "Publish a trip and set your price" },
-  "/vehicle": { title: "Vehicle", subtitle: "Manage your car or bike" },
-  "/plans": { title: "Plans", subtitle: "Driver and passenger subscriptions" },
-  "/profile": { title: "Profile", subtitle: "Your details and verification status" },
-};
-
-function initials(name: string | null | undefined): string {
-  return name?.trim().charAt(0).toUpperCase() || "?";
-}
-
-function pageMeta(pathname: string) {
-  if (PAGE_META[pathname]) {
-    return PAGE_META[pathname];
-  }
-  if (pathname.startsWith("/rides/") && pathname.endsWith("/book")) {
-    return { title: "Confirm booking", subtitle: "Review the fare and pay" };
-  }
-  if (pathname.startsWith("/rides/")) {
-    return { title: "Ride details", subtitle: "Driver, vehicle, and trip info" };
-  }
-  if (pathname.startsWith("/bookings/")) {
-    return { title: "Booking", subtitle: "Payment status" };
-  }
-  return { title: "RideShare India", subtitle: "" };
-}
-
 function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
+  const user = useAuthStore((state) => state.user);
+  const signOut = useAuthStore((state) => state.signOut);
+  const navigate = useNavigate();
+
+  function handleSignOut() {
+    signOut();
+    onNavigate?.();
+    navigate("/");
+  }
+
   return (
-    <>
-      <Link to="/search" onClick={onNavigate} className="flex items-center gap-2 px-5 pb-6 pt-5">
-        <span className="font-display text-lg font-extrabold tracking-tight text-white">
-          RideShare <span className="text-brand-light">India</span>
-        </span>
-      </Link>
+    <div className="flex h-full flex-col">
+      <div className="px-4 pb-6 pt-5">
+        <Logo to="/search" variant="dark" />
+      </div>
       <nav className="flex flex-col gap-1 px-3">
         {NAV_ITEMS.map((item) => (
           <NavLink
@@ -58,8 +37,8 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
             to={item.to}
             onClick={onNavigate}
             className={({ isActive }) =>
-              `flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold transition ${
-                isActive ? "bg-white/10 text-white" : "text-white/60 hover:bg-white/5 hover:text-white/90"
+              `flex items-center gap-3 rounded-2xl px-3 py-2.5 text-sm font-semibold transition ${
+                isActive ? "bg-white/10 text-white shadow-glow" : "text-white/55 hover:bg-white/5 hover:text-white"
               }`
             }
           >
@@ -68,48 +47,43 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
           </NavLink>
         ))}
       </nav>
-      <div className="mt-6 px-3">
-        <p className="px-3 text-[11px] font-bold uppercase tracking-wide text-white/30">Coming soon</p>
-        <div className="mt-1 flex flex-col gap-1">
-          {SOON_ITEMS.map((label) => (
-            <span key={label} className="cursor-not-allowed rounded-xl px-3 py-2 text-sm font-semibold text-white/25">
-              {label}
-            </span>
-          ))}
-        </div>
+      <div className="mt-auto border-t border-white/10 p-4">
+        <NavLink to="/profile" onClick={onNavigate} className="flex items-center gap-3 rounded-2xl p-2 hover:bg-white/5">
+          <Avatar name={user?.name} photoUrl={user?.photoUrl} size="sm" />
+          <div className="min-w-0 flex-1">
+            <p className="truncate text-sm font-bold text-white">{user?.name ?? "Your profile"}</p>
+            <p className="truncate text-[11px] text-white/40">{user?.phone}</p>
+          </div>
+        </NavLink>
+        <button
+          type="button"
+          onClick={handleSignOut}
+          className="mt-2 flex w-full items-center gap-2 rounded-2xl px-3 py-2 text-sm font-semibold text-white/45 transition hover:bg-white/5 hover:text-white"
+        >
+          <Icon path={icons.logout} className="h-4 w-4" />
+          Sign out
+        </button>
       </div>
-    </>
+    </div>
   );
 }
 
 export function AppShell() {
-  const location = useLocation();
-  const navigate = useNavigate();
   const user = useAuthStore((state) => state.user);
-  const signOut = useAuthStore((state) => state.signOut);
   const [drawerOpen, setDrawerOpen] = useState(false);
-  const meta = pageMeta(location.pathname);
-
-  function handleSignOut() {
-    signOut();
-    navigate("/");
-  }
 
   return (
     <div className="flex min-h-screen bg-paper font-sans text-ink">
-      <aside className="hidden w-64 shrink-0 flex-col bg-ink lg:flex">
-        <SidebarContent />
+      <aside className="hidden w-[272px] shrink-0 bg-ink lg:block">
+        <div className="sticky top-0 h-screen">
+          <SidebarContent />
+        </div>
       </aside>
 
       {drawerOpen ? (
         <div className="fixed inset-0 z-40 lg:hidden">
-          <button
-            type="button"
-            aria-label="Close menu"
-            onClick={() => setDrawerOpen(false)}
-            className="absolute inset-0 bg-ink/50"
-          />
-          <aside className="relative flex h-full w-64 flex-col bg-ink">
+          <button type="button" aria-label="Close menu" onClick={() => setDrawerOpen(false)} className="absolute inset-0 bg-ink/50" />
+          <aside className="relative flex h-full w-[272px] flex-col bg-ink shadow-floating">
             <button
               type="button"
               onClick={() => setDrawerOpen(false)}
@@ -123,42 +97,21 @@ export function AppShell() {
         </div>
       ) : null}
 
-      <div className="flex min-h-screen flex-1 flex-col">
-        <header className="sticky top-0 z-20 border-b border-line/70 bg-paper/90 backdrop-blur">
-          <div className="flex items-center justify-between px-5 py-4 sm:px-8">
-            <div className="flex items-center gap-3">
-              <button
-                type="button"
-                onClick={() => setDrawerOpen(true)}
-                className="text-ink-soft lg:hidden"
-                aria-label="Open menu"
-              >
+      <div className="flex min-h-screen min-w-0 flex-1 flex-col">
+        <header className="sticky top-0 z-20 border-b border-line/70 bg-paper/90 backdrop-blur-xl lg:hidden">
+          <div className="flex items-center justify-between gap-3 px-4 py-3.5 sm:px-8">
+            <div className="flex min-w-0 items-center gap-3">
+              <button type="button" onClick={() => setDrawerOpen(true)} className="text-ink-soft lg:hidden" aria-label="Open menu">
                 <Icon path={icons.menu} className="h-5 w-5" />
               </button>
-              <div>
-                <h1 className="font-display text-lg font-extrabold tracking-tight text-ink sm:text-xl">{meta.title}</h1>
-                {meta.subtitle ? <p className="text-xs text-ink-faint sm:text-sm">{meta.subtitle}</p> : null}
+              <div className="lg:hidden">
+                <Logo to="/search" />
               </div>
             </div>
-            <div className="flex items-center gap-3">
-              <div className="hidden items-center gap-2 sm:flex">
-                <div className="flex h-8 w-8 items-center justify-center overflow-hidden rounded-full bg-brand-light text-xs font-bold text-brand-dark">
-                  {user?.photoUrl ? (
-                    <img src={user.photoUrl} alt={user.name ?? "You"} className="h-full w-full object-cover" />
-                  ) : (
-                    initials(user?.name)
-                  )}
-                </div>
-                <span className="text-sm font-semibold text-ink-soft">{user?.name ?? user?.phone}</span>
-              </div>
-              <button
-                type="button"
-                onClick={handleSignOut}
-                className="rounded-full border border-line px-4 py-1.5 text-sm font-semibold text-ink-soft transition hover:border-brand hover:text-brand"
-              >
-                Sign out
-              </button>
-            </div>
+            <NavLink to="/profile" className="flex items-center gap-2 rounded-full border border-line bg-white py-1 pl-1 pr-3 shadow-card">
+              <Avatar name={user?.name} photoUrl={user?.photoUrl} size="sm" />
+              <span className="hidden max-w-[10rem] truncate text-sm font-semibold text-ink-soft sm:inline">{user?.name ?? user?.phone}</span>
+            </NavLink>
           </div>
         </header>
         <main className="flex-1">

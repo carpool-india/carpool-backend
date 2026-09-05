@@ -1,45 +1,56 @@
 import type { SearchMatch } from "../store/tripStore";
-
-function initials(name: string): string {
-  return name.trim().charAt(0).toUpperCase() || "?";
-}
+import { Avatar, Badge, RouteEndpoints, TrustBadge } from "./ui";
+import { Icon, icons } from "./Icon";
 
 export function RideCard({ trip, onClick }: { trip: SearchMatch; onClick: () => void }) {
   const departure = new Date(trip.departureTime);
+  const time = departure.toLocaleTimeString("en-IN", { hour: "numeric", minute: "2-digit" });
+  const day = departure.toLocaleDateString("en-IN", { weekday: "short", day: "numeric", month: "short" });
+
   return (
     <button
       type="button"
       onClick={onClick}
-      className="w-full rounded-2xl border border-line bg-white p-5 text-left shadow-card transition hover:-translate-y-0.5 hover:shadow-floating"
+      className="w-full rounded-3xl border border-line bg-white p-5 text-left shadow-card transition hover:-translate-y-0.5 hover:border-brand/30 hover:shadow-floating"
     >
-      <div className="flex items-center justify-between">
-        <p className="text-sm font-bold text-ink-soft">
-          {trip.originName} <span className="text-ink-faint">→</span> {trip.destinationName}
-        </p>
-        <span className="text-lg font-extrabold text-ink">₹{trip.pricePerSeat}</span>
-      </div>
-      <div className="mt-3 flex items-center gap-3">
-        <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full bg-brand-light text-sm font-bold text-brand-dark">
-          {trip.driverPhotoUrl ? (
-            <img src={trip.driverPhotoUrl} alt={trip.driverName} className="h-full w-full object-cover" />
-          ) : (
-            initials(trip.driverName)
-          )}
+      <div className="flex items-start justify-between gap-4">
+        <div className="min-w-0 flex-1">
+          <p className="text-xs font-bold uppercase tracking-wide text-ink-faint">{day}</p>
+          <div className="mt-3 flex gap-4">
+            <div className="w-14 shrink-0">
+              <p className="font-display text-lg font-extrabold text-ink">{time}</p>
+            </div>
+            <RouteEndpoints from={trip.originName} to={trip.destinationName} compact />
+          </div>
         </div>
+        <div className="text-right">
+          <p className="font-display text-xl font-extrabold text-ink">₹{trip.pricePerSeat}</p>
+          <p className="text-[11px] font-semibold text-ink-faint">per seat</p>
+        </div>
+      </div>
+
+      <div className="mt-4 flex items-center gap-3 border-t border-line pt-4">
+        <Avatar name={trip.driverName} photoUrl={trip.driverPhotoUrl} size="sm" />
         <div className="min-w-0 flex-1">
           <p className="truncate text-sm font-bold text-ink">{trip.driverName}</p>
-          <p className="text-xs text-ink-faint">
-            {departure.toLocaleString("en-IN", { weekday: "short", day: "numeric", month: "short", hour: "numeric", minute: "2-digit" })}
+          <p className="flex items-center gap-1.5 text-xs text-ink-faint">
+            {trip.averageStars > 0 ? (
+              <>
+                <Icon path={icons.star} className="h-3 w-3 text-accent" />
+                {trip.averageStars.toFixed(1)}
+                <span>·</span>
+              </>
+            ) : null}
+            {trip.seatsAvailable} seat{trip.seatsAvailable === 1 ? "" : "s"} left
           </p>
         </div>
-        <span className="rounded-full bg-brand-light px-2.5 py-1 text-xs font-extrabold text-brand-dark">
-          {trip.trustScore} Trust
-        </span>
-      </div>
-      <div className="mt-3 flex flex-wrap items-center gap-2 text-xs font-semibold text-ink-faint">
-        <span>{trip.seatsAvailable} seat{trip.seatsAvailable === 1 ? "" : "s"} left</span>
-        {trip.isWomenOnly ? <span className="rounded-full bg-pink-50 px-2 py-0.5 text-pink-700">Women only</span> : null}
-        {trip.instantBook ? <span className="rounded-full bg-brand-light px-2 py-0.5 text-brand-dark">Instant book</span> : null}
+        <div className="flex flex-col items-end gap-1">
+          <TrustBadge score={trip.trustScore} />
+          <div className="flex flex-wrap justify-end gap-1">
+            {trip.isWomenOnly ? <Badge tone="pink">Women only</Badge> : null}
+            {trip.instantBook ? <Badge>Instant</Badge> : null}
+          </div>
+        </div>
       </div>
     </button>
   );

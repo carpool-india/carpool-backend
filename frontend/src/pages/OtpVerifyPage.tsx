@@ -1,5 +1,5 @@
-import { useEffect, useState } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useEffect, useRef, useState } from "react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { otp6Schema } from "@rideshare/utils";
 import { useSupabaseAuth } from "../hooks/useSupabaseAuth";
 
@@ -14,6 +14,7 @@ export function OtpVerifyPage() {
   const [otp, setOtp] = useState("");
   const [cooldown, setCooldown] = useState(RESEND_COOLDOWN_SECONDS);
   const { sendOtp, verifyOtp, loading, error } = useSupabaseAuth();
+  const inputs = useRef<Array<HTMLInputElement | null>>([]);
 
   useEffect(() => {
     if (!phone) {
@@ -31,6 +32,22 @@ export function OtpVerifyPage() {
 
   if (!phone) {
     return null;
+  }
+
+  function setDigit(index: number, digit: string) {
+    const next = otp.padEnd(6, " ").split("");
+    next[index] = digit;
+    const joined = next.join("").replace(/ /g, "").slice(0, 6);
+    setOtp(joined);
+    if (digit && index < 5) {
+      inputs.current[index + 1]?.focus();
+    }
+  }
+
+  function onKeyDown(index: number, key: string) {
+    if (key === "Backspace" && !otp[index] && index > 0) {
+      inputs.current[index - 1]?.focus();
+    }
   }
 
   async function resend() {
@@ -55,21 +72,39 @@ export function OtpVerifyPage() {
   }
 
   return (
-    <div className="mx-auto max-w-sm px-6 py-16">
-      <h1 className="font-display text-3xl font-extrabold tracking-tight text-ink">Enter the code</h1>
-      <p className="mt-2 text-sm text-ink-soft">
-        We sent a 6-digit code to <span className="font-bold text-brand">{phone}</span>
+    <div className="mx-auto flex w-full max-w-md flex-1 flex-col justify-center px-7 py-12 sm:px-10">
+      <Link to="/login" className="text-sm font-bold text-brand hover:underline">
+        ← Change number
+      </Link>
+      <h1 className="mt-6 font-display text-3xl font-extrabold tracking-tight text-ink sm:text-4xl">Enter the code</h1>
+      <p className="mt-3 text-sm leading-relaxed text-ink-soft">
+        We sent a 6-digit code to <span className="font-bold text-ink">{phone}</span>
       </p>
-      <input
-        value={otp}
-        onChange={(e) => setOtp(e.target.value.replace(/\D/g, "").slice(0, 6))}
-        inputMode="numeric"
-        maxLength={6}
-        placeholder="000000"
-        className="mt-8 w-full rounded-2xl bg-white py-5 text-center text-4xl font-extrabold tracking-[0.5em] text-ink shadow-card outline-none placeholder:text-line"
-      />
+
+      <div className="mt-8 flex justify-between gap-2">
+        {Array.from({ length: 6 }).map((_, index) => (
+          <input
+            key={index}
+            ref={(el) => {
+              inputs.current[index] = el;
+            }}
+            value={otp[index] ?? ""}
+            onChange={(e) => setDigit(index, e.target.value.replace(/\D/g, "").slice(-1))}
+            onKeyDown={(e) => onKeyDown(index, e.key)}
+            onPaste={(e) => {
+              e.preventDefault();
+              const pasted = e.clipboardData.getData("text").replace(/\D/g, "").slice(0, 6);
+              setOtp(pasted);
+              inputs.current[Math.min(pasted.length, 5)]?.focus();
+            }}
+            inputMode="numeric"
+            maxLength={1}
+            className="h-14 w-full rounded-2xl border border-[#E4DCCE] bg-white text-center text-xl font-extrabold text-ink outline-none transition focus:border-brand focus:shadow-glow"
+          />
+        ))}
+      </div>
       {error ? <p className="mt-3 text-sm text-red-600">{error}</p> : null}
-      <div className="mt-4 text-center">
+      <div className="mt-5 text-center">
         {cooldown > 0 ? (
           <p className="text-sm text-ink-faint">Resend code in {cooldown}s</p>
         ) : (
@@ -82,9 +117,9 @@ export function OtpVerifyPage() {
         type="button"
         onClick={() => void submit()}
         disabled={loading || otp.length !== 6}
-        className="mt-8 w-full rounded-full bg-brand py-3.5 text-sm font-bold text-white shadow-card transition hover:bg-brand-dark disabled:cursor-not-allowed disabled:bg-line disabled:text-ink-faint disabled:shadow-none"
+        className="mt-6 w-full rounded-full bg-brand py-4 text-sm font-bold text-white shadow-lg transition hover:-translate-y-0.5 hover:bg-brand-dark disabled:translate-y-0 disabled:cursor-not-allowed disabled:bg-[#D9D0C2] disabled:text-ink-faint disabled:shadow-none"
       >
-        {loading ? "Verifying…" : "Verify"}
+        {loading ? "Verifying…" : "Verify & continue"}
       </button>
     </div>
   );
