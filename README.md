@@ -1,5 +1,7 @@
 # RideShare India
 
+[![CI](https://github.com/carpool-india/carpool-backend/actions/workflows/ci.yml/badge.svg)](https://github.com/carpool-india/carpool-backend/actions/workflows/ci.yml)
+
 Production-grade carpooling MVP for India. The goal is to beat BlaBlaCar India on safety (live GPS + in-app chat + SOS), payments (Razorpay UPI escrow), identity (mandatory Aadhaar + DL), and language (Hindi + Tamil from day one).
 
 ## Layout
