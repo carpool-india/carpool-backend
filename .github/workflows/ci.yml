@@ -1,0 +1,72 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  node:
+    name: Node (typecheck + test)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20.x"
+          cache: "npm"
+
+      # Installs every npm workspace (console, frontend, mobile, backend/services/*,
+      # backend/shared/*) in one shot. No real Supabase/Razorpay/etc. credentials are
+      # required here or in the steps below: typechecking is a static, compile-time
+      # check (env access shows up only as a type, never evaluated), and every
+      # workspace's test suite exercises pure functions / mocked dependencies rather
+      # than calling out to Supabase.
+      - name: Install dependencies
+        run: npm ci
+
+      # Runs `tsc --noEmit` (via turbo) across every workspace that defines a
+      # typecheck script. Deliberately no `npm run build` step here: console,
+      # frontend, and mobile read import.meta.env.* / EXPO_PUBLIC_* at runtime with
+      # safe fallbacks, so nothing needs real secrets to typecheck, but a real Vite
+      # `build` for frontend/console isn't exercised in CI to keep this workflow
+      # secret-free.
+      - name: Typecheck
+        run: npm run typecheck
+
+      # Runs `jest` (via turbo) across every workspace that defines a test script.
+      - name: Test
+        run: npm run test
+
+  matching:
+    name: Python matching service (pytest)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend/services/matching
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+          cache-dependency-path: backend/services/matching/requirements.txt
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      # matching's tests (tests/test_haversine.py, test_route_matcher.py,
+      # test_scoring.py) exercise pure functions only (haversine, route matching,
+      # scoring) and never construct a Supabase client, so no credentials are
+      # needed to run them.
+      - name: Test
+        run: pytest
