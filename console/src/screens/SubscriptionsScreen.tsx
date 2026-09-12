@@ -7,7 +7,8 @@ import { DataTable } from "../components/DataTable";
 import { FilterBar } from "../components/FilterBar";
 import { ActionBanner } from "../components/ActionBanner";
 import { ActionMenu } from "../components/ActionMenu";
-import { liveOrMock, MOCK_SUBSCRIPTIONS, paginate } from "../lib/mockData";
+import { DemoDataBanner } from "../components/DemoDataBanner";
+import { liveOrMock, LiveOrMock, MOCK_SUBSCRIPTIONS, paginate } from "../lib/mockData";
 
 interface AdminSubscription {
   id: string;
@@ -63,16 +64,27 @@ export function SubscriptionsScreen() {
     } catch (err) {
       setNotice(err instanceof Error ? err.message : "Unable to cancel plan");
     }
-    queryClient.setQueryData<{ items: AdminSubscription[]; total: number }>(
+    queryClient.setQueryData<LiveOrMock<{ items: AdminSubscription[]; total: number }>>(
       ["admin-subscriptions", page, planType, status],
       (old) =>
-        old ? { ...old, items: old.items.map((item) => (item.id === sub.id ? { ...item, status: "cancelled" } : item)) } : old
+        old
+          ? {
+              ...old,
+              data: {
+                ...old.data,
+                items: old.data.items.map((item) => (item.id === sub.id ? { ...item, status: "cancelled" } : item)),
+              },
+            }
+          : old
     );
   }
+
+  const isMock = Boolean(query.data?.isMock);
 
   return (
     <div className="page-frame page-frame-fill">
       <ActionBanner message={notice} onDismiss={() => setNotice(null)} />
+      {isMock ? <DemoDataBanner context="subscription" /> : null}
       <FilterBar>
         <select
           value={planType}
@@ -127,13 +139,13 @@ export function SubscriptionsScreen() {
               ),
           },
         ]}
-        rows={query.data?.items ?? []}
+        rows={query.data?.data.items ?? []}
         rowKey={(sub) => sub.id}
         loading={query.isLoading}
         error={query.error instanceof Error ? query.error.message : query.error ? "Unable to load plans" : null}
         emptyTitle="No plans yet"
         emptyHint="Driver and passenger subscriptions will appear in this table when purchased."
-        footer={<Pagination page={page} total={query.data?.total ?? 0} limit={20} onPageChange={setPage} />}
+        footer={<Pagination page={page} total={query.data?.data.total ?? 0} limit={20} onPageChange={setPage} />}
       />
     </div>
   );

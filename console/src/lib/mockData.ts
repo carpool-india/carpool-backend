@@ -11,15 +11,25 @@ export function paginate<T>(items: T[], page: number, limit: number): { items: T
   return { items: items.slice(start, start + limit), total: items.length };
 }
 
-export async function liveOrMock<T>(request: () => Promise<T>, mock: T, isEmpty?: (data: T) => boolean): Promise<T> {
+export interface LiveOrMock<T> {
+  data: T;
+  /** true when `data` is fabricated demo data rather than a real backend response. */
+  isMock: boolean;
+}
+
+export async function liveOrMock<T>(
+  request: () => Promise<T>,
+  mock: T,
+  isEmpty?: (data: T) => boolean
+): Promise<LiveOrMock<T>> {
   try {
     const data = await request();
     if (isEmpty?.(data)) {
-      return mock;
+      return { data: mock, isMock: true };
     }
-    return data;
+    return { data, isMock: false };
   } catch {
-    return mock;
+    return { data: mock, isMock: true };
   }
 }
 

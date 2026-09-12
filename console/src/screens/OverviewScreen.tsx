@@ -4,6 +4,7 @@ import { bookingGet, paymentGet, safetyGet } from "../lib/api";
 import { StatTile } from "../components/StatTile";
 import { DataTable } from "../components/DataTable";
 import { Badge } from "../components/Badge";
+import { DemoDataBanner } from "../components/DemoDataBanner";
 import { liveOrMock, MOCK_OPEN_SOS, MOCK_OVERVIEW, MOCK_REVENUE } from "../lib/mockData";
 
 interface Overview {
@@ -52,46 +53,53 @@ export function OverviewScreen() {
     refetchInterval: 15000,
   });
 
+  const overviewData = overview.data?.data;
+  const revenueData = revenue.data?.data;
+  const sosData = unresolvedSos.data?.data;
+  const showOverviewBanner = Boolean(overview.data?.isMock || revenue.data?.isMock);
+
   return (
     <div className="page-frame">
-      {unresolvedSos.data && unresolvedSos.data.total > 0 ? (
+      {showOverviewBanner ? <DemoDataBanner context="overview" /> : null}
+      {sosData && sosData.total > 0 ? (
         <Link to="/safety" className="sos-banner">
           <span className="sos-banner-copy">
             <span className="sos-dot" aria-hidden />
-            {unresolvedSos.data.total} unresolved SOS alert{unresolvedSos.data.total > 1 ? "s" : ""}
+            {sosData.total} unresolved SOS alert{sosData.total > 1 ? "s" : ""}
           </span>
           <span className="sos-banner-link">Review</span>
         </Link>
       ) : null}
 
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        <StatTile label="Total users" value={overview.data?.totalUsers ?? "…"} />
+        <StatTile label="Total users" value={overviewData?.totalUsers ?? "…"} />
         <Link to="/kyc" className="stat-tile-link">
-          <StatTile label="KYC pending" value={overview.data?.kycPending ?? "…"} />
+          <StatTile label="KYC pending" value={overviewData?.kycPending ?? "…"} />
         </Link>
         <Link to="/trips" className="stat-tile-link">
-          <StatTile label="Active trips" value={overview.data?.activeTrips ?? "…"} />
+          <StatTile label="Active trips" value={overviewData?.activeTrips ?? "…"} />
         </Link>
         <Link to="/bookings" className="stat-tile-link">
-          <StatTile label="Bookings today" value={overview.data?.bookingsToday ?? "…"} />
+          <StatTile label="Bookings today" value={overviewData?.bookingsToday ?? "…"} />
         </Link>
       </div>
 
       <h2 className="section-label">Revenue</h2>
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        <StatTile label="Platform fee (month)" value={revenue.data ? inr(revenue.data.platformFee.thisMonth) : "…"} />
-        <StatTile label="Platform fee (all time)" value={revenue.data ? inr(revenue.data.platformFee.allTime) : "…"} />
+        <StatTile label="Platform fee (month)" value={revenueData ? inr(revenueData.platformFee.thisMonth) : "…"} />
+        <StatTile label="Platform fee (all time)" value={revenueData ? inr(revenueData.platformFee.allTime) : "…"} />
         <StatTile
           label="Cancellation bonds (month)"
-          value={revenue.data ? inr(revenue.data.cancellationBonds.thisMonth) : "…"}
+          value={revenueData ? inr(revenueData.cancellationBonds.thisMonth) : "…"}
         />
         <StatTile
           label="Active subscription revenue"
-          value={revenue.data ? inr(revenue.data.subscriptionRevenueActive) : "…"}
+          value={revenueData ? inr(revenueData.subscriptionRevenueActive) : "…"}
         />
       </div>
 
       <h2 className="section-label">Open SOS</h2>
+      {unresolvedSos.data?.isMock ? <DemoDataBanner context="SOS" /> : null}
       <DataTable
         columns={[
           { header: "Type", render: (event) => event.event_type.replace(/_/g, " ") },
@@ -106,7 +114,7 @@ export function OverviewScreen() {
           },
           { header: "When", render: (event) => new Date(event.created_at).toLocaleString("en-IN") },
         ]}
-        rows={unresolvedSos.data?.items ?? []}
+        rows={sosData?.items ?? []}
         rowKey={(event) => event.id}
         loading={unresolvedSos.isLoading}
         error={unresolvedSos.error instanceof Error ? unresolvedSos.error.message : unresolvedSos.error ? "Unable to load SOS" : null}

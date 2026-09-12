@@ -6,7 +6,8 @@ import { DataTable } from "../components/DataTable";
 import { FilterBar } from "../components/FilterBar";
 import { ActionBanner } from "../components/ActionBanner";
 import { ActionMenu } from "../components/ActionMenu";
-import { liveOrMock, MOCK_RATINGS, paginate } from "../lib/mockData";
+import { DemoDataBanner } from "../components/DemoDataBanner";
+import { liveOrMock, LiveOrMock, MOCK_RATINGS, paginate } from "../lib/mockData";
 
 interface AdminRating {
   id: string;
@@ -49,14 +50,26 @@ export function RatingsScreen() {
     } catch (err) {
       setNotice(err instanceof Error ? err.message : "Unable to hide rating");
     }
-    queryClient.setQueryData<{ items: AdminRating[]; total: number }>(["admin-ratings", page, maxStars], (old) =>
-      old ? { ...old, items: old.items.filter((item) => item.id !== rating.id), total: Math.max(0, old.total - 1) } : old
+    queryClient.setQueryData<LiveOrMock<{ items: AdminRating[]; total: number }>>(["admin-ratings", page, maxStars], (old) =>
+      old
+        ? {
+            ...old,
+            data: {
+              ...old.data,
+              items: old.data.items.filter((item) => item.id !== rating.id),
+              total: Math.max(0, old.data.total - 1),
+            },
+          }
+        : old
     );
   }
+
+  const isMock = Boolean(query.data?.isMock);
 
   return (
     <div className="page-frame page-frame-fill">
       <ActionBanner message={notice} onDismiss={() => setNotice(null)} />
+      {isMock ? <DemoDataBanner context="rating" /> : null}
       <FilterBar>
         <select
           value={maxStars}
@@ -88,13 +101,13 @@ export function RatingsScreen() {
             render: (rating) => <ActionMenu items={[{ label: "Hide", onSelect: () => void hide(rating) }]} />,
           },
         ]}
-        rows={query.data?.items ?? []}
+        rows={query.data?.data.items ?? []}
         rowKey={(rating) => rating.id}
         loading={query.isLoading}
         error={query.error instanceof Error ? query.error.message : query.error ? "Unable to load ratings" : null}
         emptyTitle="No ratings yet"
         emptyHint="Passenger and driver ratings will fill this table after trips complete."
-        footer={<Pagination page={page} total={query.data?.total ?? 0} limit={20} onPageChange={setPage} />}
+        footer={<Pagination page={page} total={query.data?.data.total ?? 0} limit={20} onPageChange={setPage} />}
       />
     </div>
   );

@@ -8,7 +8,8 @@ import { DataTable } from "../components/DataTable";
 import { FilterBar } from "../components/FilterBar";
 import { ActionBanner } from "../components/ActionBanner";
 import { ActionMenu } from "../components/ActionMenu";
-import { liveOrMock, MOCK_USERS, paginate } from "../lib/mockData";
+import { DemoDataBanner } from "../components/DemoDataBanner";
+import { liveOrMock, LiveOrMock, MOCK_USERS, paginate } from "../lib/mockData";
 
 interface AdminUser {
   id: string;
@@ -61,11 +62,14 @@ export function UsersScreen() {
     } catch (err) {
       setNotice(err instanceof Error ? err.message : "Unable to update admin flag");
     }
-    queryClient.setQueryData<{ items: AdminUser[]; total: number }>(["admin-users", page, search, role], (old) =>
+    queryClient.setQueryData<LiveOrMock<{ items: AdminUser[]; total: number }>>(["admin-users", page, search, role], (old) =>
       old
         ? {
             ...old,
-            items: old.items.map((item) => (item.id === user.id ? { ...item, is_admin: !item.is_admin } : item)),
+            data: {
+              ...old.data,
+              items: old.data.items.map((item) => (item.id === user.id ? { ...item, is_admin: !item.is_admin } : item)),
+            },
           }
         : old
     );
@@ -78,11 +82,14 @@ export function UsersScreen() {
     } catch (err) {
       setNotice(err instanceof Error ? err.message : "Unable to update account status");
     }
-    queryClient.setQueryData<{ items: AdminUser[]; total: number }>(["admin-users", page, search, role], (old) =>
+    queryClient.setQueryData<LiveOrMock<{ items: AdminUser[]; total: number }>>(["admin-users", page, search, role], (old) =>
       old
         ? {
             ...old,
-            items: old.items.map((item) => (item.id === user.id ? { ...item, is_active: !item.is_active } : item)),
+            data: {
+              ...old.data,
+              items: old.data.items.map((item) => (item.id === user.id ? { ...item, is_active: !item.is_active } : item)),
+            },
           }
         : old
     );
@@ -102,9 +109,12 @@ export function UsersScreen() {
     }
   }
 
+  const isMock = Boolean(query.data?.isMock);
+
   return (
     <div className="page-frame page-frame-fill">
       <ActionBanner message={notice} onDismiss={() => setNotice(null)} />
+      {isMock ? <DemoDataBanner context="user" /> : null}
       <FilterBar>
         <input
           value={search}
@@ -173,13 +183,13 @@ export function UsersScreen() {
             ),
           },
         ]}
-        rows={query.data?.items ?? []}
+        rows={query.data?.data.items ?? []}
         rowKey={(user) => user.id}
         loading={query.isLoading}
         error={query.error instanceof Error ? query.error.message : query.error ? "Unable to load users" : null}
         emptyTitle="No users yet"
         emptyHint="The user table is ready. New sign-ups will show up here automatically."
-        footer={<Pagination page={page} total={query.data?.total ?? 0} limit={20} onPageChange={setPage} />}
+        footer={<Pagination page={page} total={query.data?.data.total ?? 0} limit={20} onPageChange={setPage} />}
       />
     </div>
   );

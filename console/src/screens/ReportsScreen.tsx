@@ -7,7 +7,8 @@ import { DataTable } from "../components/DataTable";
 import { FilterBar } from "../components/FilterBar";
 import { ActionBanner } from "../components/ActionBanner";
 import { ActionMenu } from "../components/ActionMenu";
-import { liveOrMock, MOCK_REPORTS, paginate } from "../lib/mockData";
+import { DemoDataBanner } from "../components/DemoDataBanner";
+import { liveOrMock, LiveOrMock, MOCK_REPORTS, paginate } from "../lib/mockData";
 
 type ReportStatus = "open" | "reviewed" | "dismissed";
 
@@ -69,14 +70,22 @@ export function ReportsScreen() {
     } catch (err) {
       setNotice(err instanceof Error ? err.message : "Unable to update report");
     }
-    queryClient.setQueryData<{ items: UserReport[]; total: number }>(listKey, (old) =>
-      old ? { ...old, items: old.items.map((item) => (item.id === report.id ? { ...item, status: next } : item)) } : old
+    queryClient.setQueryData<LiveOrMock<{ items: UserReport[]; total: number }>>(listKey, (old) =>
+      old
+        ? {
+            ...old,
+            data: { ...old.data, items: old.data.items.map((item) => (item.id === report.id ? { ...item, status: next } : item)) },
+          }
+        : old
     );
   }
+
+  const isMock = Boolean(query.data?.isMock);
 
   return (
     <div className="page-frame page-frame-fill">
       <ActionBanner message={notice} onDismiss={() => setNotice(null)} />
+      {isMock ? <DemoDataBanner context="report" /> : null}
       <FilterBar>
         <select
           value={status}
@@ -132,13 +141,13 @@ export function ReportsScreen() {
               ) : null,
           },
         ]}
-        rows={query.data?.items ?? []}
+        rows={query.data?.data.items ?? []}
         rowKey={(row) => row.id}
         loading={query.isLoading}
         error={query.error instanceof Error ? query.error.message : query.error ? "Unable to load reports" : null}
         emptyTitle="No reports"
         emptyHint="Reports submitted by users about other users will appear here."
-        footer={<Pagination page={page} total={query.data?.total ?? 0} limit={20} onPageChange={setPage} />}
+        footer={<Pagination page={page} total={query.data?.data.total ?? 0} limit={20} onPageChange={setPage} />}
       />
     </div>
   );

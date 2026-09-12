@@ -7,7 +7,8 @@ import { DataTable } from "../components/DataTable";
 import { FilterBar } from "../components/FilterBar";
 import { ActionBanner } from "../components/ActionBanner";
 import { ActionMenu } from "../components/ActionMenu";
-import { liveOrMock, MOCK_TRIPS, paginate } from "../lib/mockData";
+import { DemoDataBanner } from "../components/DemoDataBanner";
+import { liveOrMock, LiveOrMock, MOCK_TRIPS, paginate } from "../lib/mockData";
 
 interface AdminTrip {
   id: string;
@@ -65,14 +66,25 @@ export function TripsScreen() {
     } catch (err) {
       setNotice(err instanceof Error ? err.message : "Unable to cancel trip");
     }
-    queryClient.setQueryData<{ items: AdminTrip[]; total: number }>(["admin-trips", page, status, tripType], (old) =>
-      old ? { ...old, items: old.items.map((item) => (item.id === trip.id ? { ...item, status: "cancelled" } : item)) } : old
+    queryClient.setQueryData<LiveOrMock<{ items: AdminTrip[]; total: number }>>(["admin-trips", page, status, tripType], (old) =>
+      old
+        ? {
+            ...old,
+            data: {
+              ...old.data,
+              items: old.data.items.map((item) => (item.id === trip.id ? { ...item, status: "cancelled" } : item)),
+            },
+          }
+        : old
     );
   }
+
+  const isMock = Boolean(query.data?.isMock);
 
   return (
     <div className="page-frame page-frame-fill">
       <ActionBanner message={notice} onDismiss={() => setNotice(null)} />
+      {isMock ? <DemoDataBanner context="trip" /> : null}
       <FilterBar>
         <select
           value={status}
@@ -129,13 +141,13 @@ export function TripsScreen() {
               ),
           },
         ]}
-        rows={query.data?.items ?? []}
+        rows={query.data?.data.items ?? []}
         rowKey={(trip) => trip.id}
         loading={query.isLoading}
         error={query.error instanceof Error ? query.error.message : query.error ? "Unable to load trips" : null}
         emptyTitle="No trips yet"
         emptyHint="Published rides will list here with route, seats, and status."
-        footer={<Pagination page={page} total={query.data?.total ?? 0} limit={20} onPageChange={setPage} />}
+        footer={<Pagination page={page} total={query.data?.data.total ?? 0} limit={20} onPageChange={setPage} />}
       />
     </div>
   );

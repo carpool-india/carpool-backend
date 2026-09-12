@@ -537,6 +537,28 @@ button, input, select { font: inherit; }
   cursor: pointer;
 }
 
+.demo-data-banner {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+  border: 1px solid #fde68a;
+  border-radius: 8px;
+  background: #fffbeb;
+  padding: 8px 12px;
+  color: #92400e;
+  font-size: 13px;
+  font-weight: 500;
+}
+.demo-data-banner-dot {
+  width: 7px;
+  height: 7px;
+  flex-shrink: 0;
+  border-radius: 999px;
+  background: #f59e0b;
+}
+
 .stat-tile-link { display: block; color: inherit; text-decoration: none; }
 .stat-tile-link:hover .stat-tile { border-color: #99f6e4; }
 

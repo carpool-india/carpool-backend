@@ -7,7 +7,8 @@ import { DataTable } from "../components/DataTable";
 import { FilterBar } from "../components/FilterBar";
 import { ActionBanner } from "../components/ActionBanner";
 import { ActionMenu } from "../components/ActionMenu";
-import { liveOrMock, MOCK_PAYMENTS, paginate } from "../lib/mockData";
+import { DemoDataBanner } from "../components/DemoDataBanner";
+import { liveOrMock, LiveOrMock, MOCK_PAYMENTS, paginate } from "../lib/mockData";
 
 interface AdminPayment {
   id: string;
@@ -67,16 +68,27 @@ export function PaymentsScreen() {
     } catch (err) {
       setNotice(err instanceof Error ? err.message : "Unable to refund");
     }
-    queryClient.setQueryData<{ items: AdminPayment[]; total: number }>(["admin-payments", page, type, status], (old) =>
+    queryClient.setQueryData<LiveOrMock<{ items: AdminPayment[]; total: number }>>(["admin-payments", page, type, status], (old) =>
       old
-        ? { ...old, items: old.items.map((item) => (item.id === payment.id ? { ...item, status: "refunded", type: "refund" } : item)) }
+        ? {
+            ...old,
+            data: {
+              ...old.data,
+              items: old.data.items.map((item) =>
+                item.id === payment.id ? { ...item, status: "refunded", type: "refund" } : item
+              ),
+            },
+          }
         : old
     );
   }
 
+  const isMock = Boolean(query.data?.isMock);
+
   return (
     <div className="page-frame page-frame-fill">
       <ActionBanner message={notice} onDismiss={() => setNotice(null)} />
+      {isMock ? <DemoDataBanner context="payment" /> : null}
       <FilterBar>
         <select
           value={type}
@@ -130,13 +142,13 @@ export function PaymentsScreen() {
               ),
           },
         ]}
-        rows={query.data?.items ?? []}
+        rows={query.data?.data.items ?? []}
         rowKey={(payment) => payment.id}
         loading={query.isLoading}
         error={query.error instanceof Error ? query.error.message : query.error ? "Unable to load payments" : null}
         emptyTitle="No payments yet"
         emptyHint="UPI captures and refunds will list here as they settle."
-        footer={<Pagination page={page} total={query.data?.total ?? 0} limit={20} onPageChange={setPage} />}
+        footer={<Pagination page={page} total={query.data?.data.total ?? 0} limit={20} onPageChange={setPage} />}
       />
     </div>
   );

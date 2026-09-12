@@ -7,7 +7,8 @@ import { DataTable } from "../components/DataTable";
 import { FilterBar } from "../components/FilterBar";
 import { ActionBanner } from "../components/ActionBanner";
 import { ActionMenu } from "../components/ActionMenu";
-import { liveOrMock, MOCK_VEHICLES, paginate } from "../lib/mockData";
+import { DemoDataBanner } from "../components/DemoDataBanner";
+import { liveOrMock, LiveOrMock, MOCK_VEHICLES, paginate } from "../lib/mockData";
 
 interface AdminVehicle {
   id: string;
@@ -58,16 +59,25 @@ export function VehiclesScreen() {
     } catch (err) {
       setNotice(err instanceof Error ? err.message : "Unable to update vehicle");
     }
-    queryClient.setQueryData<{ items: AdminVehicle[]; total: number }>(["admin-vehicles", page, verified], (old) =>
+    queryClient.setQueryData<LiveOrMock<{ items: AdminVehicle[]; total: number }>>(["admin-vehicles", page, verified], (old) =>
       old
-        ? { ...old, items: old.items.map((item) => (item.id === vehicle.id ? { ...item, is_verified: isVerified } : item)) }
+        ? {
+            ...old,
+            data: {
+              ...old.data,
+              items: old.data.items.map((item) => (item.id === vehicle.id ? { ...item, is_verified: isVerified } : item)),
+            },
+          }
         : old
     );
   }
 
+  const isMock = Boolean(query.data?.isMock);
+
   return (
     <div className="page-frame page-frame-fill">
       <ActionBanner message={notice} onDismiss={() => setNotice(null)} />
+      {isMock ? <DemoDataBanner context="vehicle" /> : null}
       <FilterBar>
         <select
           value={verified}
@@ -131,13 +141,13 @@ export function VehiclesScreen() {
             ),
           },
         ]}
-        rows={query.data?.items ?? []}
+        rows={query.data?.data.items ?? []}
         rowKey={(row) => row.id}
         loading={query.isLoading}
         error={query.error instanceof Error ? query.error.message : query.error ? "Unable to load vehicles" : null}
         emptyTitle="No vehicles yet"
         emptyHint="Cars and bikes added by drivers will appear here for verification."
-        footer={<Pagination page={page} total={query.data?.total ?? 0} limit={20} onPageChange={setPage} />}
+        footer={<Pagination page={page} total={query.data?.data.total ?? 0} limit={20} onPageChange={setPage} />}
       />
     </div>
   );

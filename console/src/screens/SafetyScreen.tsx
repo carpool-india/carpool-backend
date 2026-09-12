@@ -7,7 +7,8 @@ import { DataTable } from "../components/DataTable";
 import { FilterBar } from "../components/FilterBar";
 import { ActionBanner } from "../components/ActionBanner";
 import { ActionMenu } from "../components/ActionMenu";
-import { liveOrMock, MOCK_CONTACTS, MOCK_SAFETY, paginate } from "../lib/mockData";
+import { DemoDataBanner } from "../components/DemoDataBanner";
+import { liveOrMock, LiveOrMock, MOCK_CONTACTS, MOCK_SAFETY, paginate } from "../lib/mockData";
 
 interface SafetyEvent {
   id: string;
@@ -71,13 +72,16 @@ export function SafetyScreen() {
     } catch (err) {
       setNotice(err instanceof Error ? err.message : "Unable to resolve event");
     }
-    queryClient.setQueryData<{ items: SafetyEvent[]; total: number }>(
+    queryClient.setQueryData<LiveOrMock<{ items: SafetyEvent[]; total: number }>>(
       ["admin-safety-events", page, eventType, severity, resolvedFilter],
       (old) =>
         old
           ? {
               ...old,
-              items: old.items.map((item) => (item.id === id ? { ...item, resolved: true } : item)),
+              data: {
+                ...old.data,
+                items: old.data.items.map((item) => (item.id === id ? { ...item, resolved: true } : item)),
+              },
             }
           : old
     );
@@ -97,9 +101,13 @@ export function SafetyScreen() {
     },
   });
 
+  const isListMock = Boolean(query.data?.isMock);
+  const isContactsMock = Boolean(contacts.data?.isMock);
+
   return (
     <div className="page-frame page-frame-fill">
       <ActionBanner message={notice} onDismiss={() => setNotice(null)} />
+      {isListMock ? <DemoDataBanner context="safety event" /> : null}
       <FilterBar>
         <select
           value={eventType}
@@ -183,13 +191,13 @@ export function SafetyScreen() {
             ),
           },
         ]}
-        rows={query.data?.items ?? []}
+        rows={query.data?.data.items ?? []}
         rowKey={(event) => event.id}
         loading={query.isLoading}
         error={query.error instanceof Error ? query.error.message : query.error ? "Unable to load safety events" : null}
         emptyTitle="No safety events"
         emptyHint="SOS, OTP failures, and deviations will show in this table as soon as they are raised."
-        footer={<Pagination page={page} total={query.data?.total ?? 0} limit={20} onPageChange={setPage} />}
+        footer={<Pagination page={page} total={query.data?.data.total ?? 0} limit={20} onPageChange={setPage} />}
       />
 
       {selected ? (
@@ -233,9 +241,10 @@ export function SafetyScreen() {
               </div>
             ) : null}
             <h3 className="section-label">Emergency contacts</h3>
-            {contacts.data?.items.length ? (
+            {isContactsMock ? <DemoDataBanner context="emergency contact" /> : null}
+            {contacts.data?.data.items.length ? (
               <ul className="contact-list">
-                {contacts.data.items.map((contact) => (
+                {contacts.data.data.items.map((contact) => (
                   <li key={contact.id}>
                     <strong>{contact.name}</strong> · {contact.relationship}
                     <div className="muted">{contact.phone}</div>
