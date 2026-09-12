@@ -6,6 +6,7 @@ import { useAuthStore } from "../store/authStore";
 import { useProfilePhoto } from "../hooks/useProfilePhoto";
 import { Avatar, Card, fieldInputClass, GhostButton, Page, PageHeader, PrimaryButton, SegmentedControl, TrustBadge } from "../components/ui";
 import { Icon, icons } from "../components/Icon";
+import { t } from "../i18n/translations";
 
 const GENDERS: Gender[] = ["male", "female", "other"];
 
@@ -13,6 +14,7 @@ export function ProfilePage() {
   const user = useAuthStore((state) => state.user);
   const setUser = useAuthStore((state) => state.setUser);
   const signOut = useAuthStore((state) => state.signOut);
+  const language = useAuthStore((state) => state.language);
   const navigate = useNavigate();
   const { upload, uploading } = useProfilePhoto();
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -79,7 +81,7 @@ export function ProfilePage() {
 
   return (
     <Page width="lg">
-      <PageHeader title="Your profile" subtitle="Photo, KYC status, and the details co-riders see." />
+      <PageHeader title={t(language, "yourProfile")} subtitle={t(language, "profileSubtitle")} />
 
       <Card className="p-6">
         <div className="flex items-center gap-4">
@@ -94,23 +96,33 @@ export function ProfilePage() {
               +
             </span>
           </button>
-          <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={(e) => void pickPhoto(e)} />
+          <label htmlFor="profile-photo-input" className="sr-only">
+            {t(language, "changePhoto")}
+          </label>
+          <input
+            ref={fileInputRef}
+            id="profile-photo-input"
+            type="file"
+            accept="image/*"
+            className="hidden"
+            onChange={(e) => void pickPhoto(e)}
+          />
           <div className="min-w-0 flex-1">
-            <p className="text-sm font-bold text-ink">{uploading ? "Uploading…" : "Change photo"}</p>
+            <p className="text-sm font-bold text-ink">{uploading ? t(language, "uploadingStatus") : t(language, "changePhoto")}</p>
             <p className="text-xs text-ink-faint">{user.phone}</p>
           </div>
           <TrustBadge score={user.trustScore} />
         </div>
 
         <div className="mt-6 grid grid-cols-3 gap-3 border-t border-line pt-5">
-          <KycDot ok={user.aadhaarVerified} label="Aadhaar" />
-          <KycDot ok={user.dlVerified} label="Driving licence" />
-          <KycDot ok={user.faceMatchDone} label="Face match" />
+          <KycDot ok={user.aadhaarVerified} label={t(language, "aadhaar")} />
+          <KycDot ok={user.dlVerified} label={t(language, "drivingLicence")} />
+          <KycDot ok={user.faceMatchDone} label={t(language, "faceMatchDoc")} />
         </div>
 
         <div className="mt-6 border-t border-line pt-5">
           <label className="block">
-            <span className="text-[10px] font-bold uppercase tracking-[0.14em] text-ink-faint">Name</span>
+            <span className="text-[10px] font-bold uppercase tracking-[0.14em] text-ink-faint">{t(language, "name")}</span>
             <input
               value={name}
               onChange={(e) => {
@@ -120,10 +132,10 @@ export function ProfilePage() {
               className={fieldInputClass}
             />
           </label>
-          <p className="mb-2 mt-5 text-[10px] font-bold uppercase tracking-[0.14em] text-ink-faint">Gender</p>
+          <p className="mb-2 mt-5 text-[10px] font-bold uppercase tracking-[0.14em] text-ink-faint">{t(language, "gender")}</p>
           <SegmentedControl
             value={gender}
-            options={GENDERS.map((value) => ({ value, label: value }))}
+            options={GENDERS.map((value) => ({ value, label: t(language, value) }))}
             onChange={(value) => {
               setGender(value);
               setSaved(false);
@@ -132,19 +144,20 @@ export function ProfilePage() {
           />
           {error ? <p className="mt-3 text-sm text-red-600">{error}</p> : null}
           <PrimaryButton type="button" onClick={() => void save()} disabled={saving} className="mt-5">
-            {saving ? "Saving…" : saved ? "Saved" : "Save changes"}
+            {saving ? t(language, "savingStatus") : saved ? t(language, "saved") : t(language, "save")}
           </PrimaryButton>
         </div>
       </Card>
 
       <div className="mt-4 overflow-hidden rounded-3xl border border-line bg-white shadow-card">
-        <MenuRow to="/vehicle" label="My vehicle" subtitle="Manage your car or bike for posting rides" />
-        <MenuRow to="/plans" label="My plans" subtitle="Driver and passenger subscription plans" />
-        <MenuRow to="/trips" label="My trips" subtitle="Rides you've booked or posted" />
+        <MenuRow to="/kyc" label={t(language, "kycTitle")} subtitle={t(language, "kycBody")} />
+        <MenuRow to="/vehicle" label={t(language, "myVehicle")} subtitle={t(language, "myVehicleSubtitle")} />
+        <MenuRow to="/plans" label={t(language, "myPlans")} subtitle={t(language, "myPlansSubtitle")} />
+        <MenuRow to="/trips" label={t(language, "myTrips")} subtitle={t(language, "myTripsSubtitle")} />
       </div>
 
       <GhostButton type="button" onClick={handleSignOut} className="mt-6 w-full">
-        Sign out
+        {t(language, "signOut")}
       </GhostButton>
     </Page>
   );

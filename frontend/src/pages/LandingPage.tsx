@@ -4,24 +4,17 @@ import { Icon, icons } from "../components/Icon";
 import { Reveal } from "../components/Reveal";
 import { POPULAR_ROUTES, SearchForm, toDateKey } from "../components/SearchForm";
 import { resolvePlace, type MapPlace } from "../services/places";
+import { useAuthStore } from "../store/authStore";
+import { t } from "../i18n/translations";
 
-const pillars = [
-  {
-    icon: icons.shield,
-    title: "Verified every time",
-    body: "Aadhaar, driving licence, and face-match checks — completed before anyone gets behind the wheel.",
-  },
-  {
-    icon: icons.lock,
-    title: "Fair, transparent fares",
-    body: "See the price per seat upfront, and pay through escrow that only releases once the trip is done.",
-  },
-  {
-    icon: icons.sos,
-    title: "Safety built in",
-    body: "Live tracking, one-tap SOS, and a safety desk that's actually watching, on every single trip.",
-  },
-];
+function usePillars() {
+  const language = useAuthStore((state) => state.language);
+  return [
+    { icon: icons.shield, title: t(language, "pillarVerifiedTitle"), body: t(language, "pillarVerifiedBody") },
+    { icon: icons.lock, title: t(language, "pillarFairFaresTitle"), body: t(language, "pillarFairFaresBody") },
+    { icon: icons.sos, title: t(language, "pillarSafetyTitle"), body: t(language, "pillarSafetyBody") },
+  ];
+}
 
 const features = [
   {
@@ -180,6 +173,7 @@ function SearchWidget() {
 }
 
 function Hero() {
+  const language = useAuthStore((state) => state.language);
   return (
     <section className="relative min-h-[100svh] overflow-hidden bg-ink">
       <img src="/images/hero-highway.png" alt="" className="absolute inset-0 h-full w-full object-cover" />
@@ -191,13 +185,11 @@ function Hero() {
             Onboarding across India
           </span>
           <h1 className="mt-6 font-display text-4xl font-extrabold leading-[1.05] tracking-tight text-white sm:text-6xl lg:text-[4.15rem]">
-            Go further.
+            {t(language, "heroTitleLine1")}
             <br />
-            Ride verified.
+            {t(language, "heroTitleLine2")}
           </h1>
-          <p className="mt-5 max-w-xl text-lg leading-relaxed text-white/80">
-            Intercity and local seats with KYC-checked drivers, escrow-protected UPI, and a safety desk on every trip.
-          </p>
+          <p className="mt-5 max-w-xl text-lg leading-relaxed text-white/80">{t(language, "heroSubtitle")}</p>
           <SearchWidget />
           <p className="mt-5 text-sm font-semibold text-white/75">
             Driving instead?{" "}
@@ -238,6 +230,7 @@ function CityMarquee() {
 }
 
 function Pillars() {
+  const pillars = usePillars();
   return (
     <section className="bg-paper-card py-16">
       <div className="mx-auto grid max-w-6xl grid-cols-1 gap-8 px-6 sm:grid-cols-3">

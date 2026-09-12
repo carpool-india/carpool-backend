@@ -29,22 +29,29 @@ export function MyTripsPage() {
   const [trips, setTrips] = useState<Trip[]>([]);
   const [loading, setLoading] = useState(true);
   const [cancellingId, setCancellingId] = useState<string | null>(null);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [cancelError, setCancelError] = useState<string | null>(null);
 
   function loadBookings() {
-    bookingGet<{ bookings: Booking[] }>("/bookings/me")
+    return bookingGet<{ bookings: Booking[] }>("/bookings/me")
       .then((payload) => setBookings(payload.bookings))
-      .catch(() => setBookings([]));
+      .catch(() => {
+        setBookings([]);
+        setLoadError("Couldn't load your bookings. Pull to refresh or try again shortly.");
+      });
   }
 
   function loadTrips() {
-    bookingGet<{ trips: Trip[] }>("/trips")
+    return bookingGet<{ trips: Trip[] }>("/trips")
       .then((payload) => setTrips(payload.trips))
-      .catch(() => setTrips([]));
+      .catch(() => {
+        setTrips([]);
+        setLoadError("Couldn't load your trips. Pull to refresh or try again shortly.");
+      });
   }
 
   useEffect(() => {
-    Promise.all([loadBookings(), loadTrips()]);
-    setLoading(false);
+    Promise.all([loadBookings(), loadTrips()]).finally(() => setLoading(false));
   }, []);
 
   async function cancelBooking(bookingId: string) {
@@ -53,11 +60,12 @@ export function MyTripsPage() {
       return;
     }
     setCancellingId(bookingId);
+    setCancelError(null);
     try {
       await bookingPost(`/bookings/${bookingId}/cancel`, { reason, cancelledBy: "passenger" });
       loadBookings();
-    } catch {
-      // Surfaced implicitly by the booking staying in its current state.
+    } catch (error) {
+      setCancelError(error instanceof Error ? error.message : "Couldn't cancel this booking. Try again.");
     } finally {
       setCancellingId(null);
     }
@@ -69,6 +77,9 @@ export function MyTripsPage() {
   return (
     <Page>
       <PageHeader title="My trips" subtitle="Rides you've booked as a passenger, or posted as a driver." />
+
+      {loadError && <Alert tone="red">{loadError}</Alert>}
+      {cancelError && <Alert tone="red">{cancelError}</Alert>}
 
       <div className="space-y-3">
         <SegmentedControl
@@ -128,16 +139,27 @@ export function MyTripsPage() {
                   <span className="text-sm text-ink-soft">
                     {item.seatsBooked} seat{item.seatsBooked === 1 ? "" : "s"}
                   </span>
-                  {item.status !== "cancelled" && item.status !== "rejected" && item.status !== "completed" ? (
-                    <button
-                      type="button"
-                      onClick={() => void cancelBooking(item.id)}
-                      disabled={cancellingId === item.id}
-                      className="rounded-full bg-red-50 px-3 py-1.5 text-xs font-bold text-red-600 disabled:opacity-50"
-                    >
-                      {cancellingId === item.id ? "Cancelling…" : "Cancel"}
-                    </button>
-                  ) : null}
+                  <div className="flex items-center gap-2">
+                    {item.status === "confirmed" ? (
+                      <button
+                        type="button"
+                        onClick={() => navigate(`/trips/${item.tripId}/live?bookingId=${item.id}`)}
+                        className="rounded-full bg-brand-light px-3 py-1.5 text-xs font-bold text-brand-dark"
+                      >
+                        Track live
+                      </button>
+                    ) : null}
+                    {item.status !== "cancelled" && item.status !== "rejected" && item.status !== "completed" ? (
+                      <button
+                        type="button"
+                        onClick={() => void cancelBooking(item.id)}
+                        disabled={cancellingId === item.id}
+                        className="rounded-full bg-red-50 px-3 py-1.5 text-xs font-bold text-red-600 disabled:opacity-50"
+                      >
+                        {cancellingId === item.id ? "Cancelling…" : "Cancel"}
+                      </button>
+                    ) : null}
+                  </div>
                 </div>
               </Card>
             ))}

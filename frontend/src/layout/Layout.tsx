@@ -2,7 +2,9 @@ import { useEffect, useState } from "react";
 import { Link, Outlet, useLocation } from "react-router-dom";
 import { Icon, icons } from "../components/Icon";
 import { Logo } from "../components/Logo";
+import { LanguageSwitcher } from "../components/LanguageSwitcher";
 import { useAuthStore } from "../store/authStore";
+import { t } from "../i18n/translations";
 
 const LANDING_LINKS = [
   { href: "#features", label: "Features" },
@@ -15,6 +17,7 @@ function Nav() {
   const location = useLocation();
   const onLanding = location.pathname === "/";
   const sessionToken = useAuthStore((state) => state.sessionToken);
+  const language = useAuthStore((state) => state.language);
   const [open, setOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
 
@@ -55,17 +58,18 @@ function Nav() {
         ) : (
           <nav className="hidden items-center gap-8 text-sm font-semibold text-ink-soft sm:flex">
             <Link to="/search" className="transition hover:text-ink">
-              Search rides
+              {t(language, "searchRidesLink")}
             </Link>
           </nav>
         )}
         <div className="flex items-center gap-2">
+          <LanguageSwitcher variant={dark ? "dark" : "light"} />
           {sessionToken ? (
             <Link
               to="/search"
               className="rounded-full bg-brand px-5 py-2.5 text-sm font-bold text-white shadow-card transition hover:bg-brand-dark"
             >
-              Go to app
+              {t(language, "goToApp")}
             </Link>
           ) : (
             <Link
@@ -76,7 +80,7 @@ function Nav() {
                   : "bg-brand text-white hover:bg-brand-dark"
               }`}
             >
-              Log in
+              {t(language, "logIn")}
             </Link>
           )}
           {onLanding ? (
@@ -109,7 +113,7 @@ function Nav() {
               onClick={() => setOpen(false)}
               className="mt-2 rounded-full bg-white px-3 py-2.5 text-center text-sm font-bold text-ink"
             >
-              Log in
+              {t(language, "logIn")}
             </Link>
           </nav>
         </div>

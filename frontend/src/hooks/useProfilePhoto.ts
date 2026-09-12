@@ -17,10 +17,13 @@ export function useProfilePhoto() {
         "/uploads/presign",
         { target: "profile" },
       );
+      // The presigned URL is always signed for image/jpeg (upload.service.ts
+      // hardcodes it) — sending the browser's real file.type would mismatch the
+      // signature and R2 would reject the PUT for any non-JPEG picked file.
       const uploadRes = await fetch(uploadUrl, {
         method: "PUT",
         body: file,
-        headers: { "Content-Type": file.type || "image/jpeg" },
+        headers: { "Content-Type": "image/jpeg" },
       });
       if (!uploadRes.ok) {
         throw new Error("Unable to upload photo");

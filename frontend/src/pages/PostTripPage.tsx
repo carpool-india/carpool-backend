@@ -38,7 +38,14 @@ export function PostTripPage() {
   useEffect(() => {
     paymentGet<{ subscriptions: Subscription[] }>("/subscriptions/me")
       .then((payload) => setSubscriptions(payload.subscriptions))
-      .catch(() => setSubscriptions([]));
+      .catch(() => {
+        // Distinct from "genuinely no active plan" (which resolves normally with
+        // an empty array) — this only fires when the request itself failed, and
+        // a driver seeing that as "no plan" could be wrongly told to pay again
+        // to post a trip they're already covered for.
+        setSubscriptions([]);
+        setError("Couldn't check your posting plan. If you have an active plan, it's still valid — try refreshing.");
+      });
     void reload().then((loaded) => {
       if (loaded.car.id) {
         setVehicleType("car");

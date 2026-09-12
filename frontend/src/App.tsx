@@ -10,10 +10,12 @@ import { RideDetailPage } from "./pages/RideDetailPage";
 import { BookingPaymentPage } from "./pages/BookingPaymentPage";
 import { BookingConfirmedPage } from "./pages/BookingConfirmedPage";
 import { ProfilePage } from "./pages/ProfilePage";
+import { KycPage } from "./pages/KycPage";
 import { VehiclePage } from "./pages/VehiclePage";
 import { PlansPage } from "./pages/PlansPage";
 import { PostTripPage } from "./pages/PostTripPage";
 import { MyTripsPage } from "./pages/MyTripsPage";
+import { LiveTripPage } from "./pages/LiveTripPage";
 import { useAuthStore } from "./store/authStore";
 
 function HomeRoute() {
@@ -66,6 +68,14 @@ export function App() {
           }
         />
         <Route
+          path="/kyc"
+          element={
+            <RequireAuth>
+              <KycPage />
+            </RequireAuth>
+          }
+        />
+        <Route
           path="/vehicle"
           element={
             <RequireAuth>
@@ -94,6 +104,14 @@ export function App() {
           element={
             <RequireAuth>
               <MyTripsPage />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/trips/:tripId/live"
+          element={
+            <RequireAuth>
+              <LiveTripPage />
             </RequireAuth>
           }
         />

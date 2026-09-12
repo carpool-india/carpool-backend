@@ -61,3 +61,8 @@ export async function notificationPost<T>(path: string, body: unknown): Promise<
   const { data } = await api.post<T>(`${serviceUrls.notification}${path}`, body);
   return data;
 }
+
+export async function safetyPost<T>(path: string, body: unknown): Promise<T> {
+  const { data } = await api.post<T>(`${serviceUrls.safety}${path}`, body);
+  return data;
+}

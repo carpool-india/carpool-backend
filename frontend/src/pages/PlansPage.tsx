@@ -19,8 +19,17 @@ export function PlansPage() {
 
   function load() {
     paymentGet<{ subscriptions: Subscription[] }>("/subscriptions/me")
-      .then((payload) => setSubscriptions(payload.subscriptions))
-      .catch(() => setSubscriptions([]))
+      .then((payload) => {
+        setSubscriptions(payload.subscriptions);
+        setError(null);
+      })
+      .catch(() => {
+        // Distinct from "genuinely no active plan" (which resolves normally with
+        // an empty array) — this only fires when the request itself failed, and
+        // a driver/passenger seeing that as "no plan" could pay for one again.
+        setSubscriptions([]);
+        setError("Couldn't check your plan status. Your existing plan (if any) is still active — try refreshing.");
+      })
       .finally(() => setLoading(false));
   }
 

@@ -8,6 +8,7 @@ import { Alert, Card, EmptyState, Page, PageHeader, PrimaryButton } from "../com
 import { useAuthStore } from "../store/authStore";
 import { useTripStore, type SearchMatch } from "../store/tripStore";
 import type { MapPlace } from "../services/places";
+import { t } from "../i18n/translations";
 
 function formatDateDisplay(value: Date): string {
   return value.toLocaleDateString("en-IN", { weekday: "short", day: "numeric", month: "short" });
@@ -40,6 +41,7 @@ interface MatchPayload {
 export function SearchPage() {
   const user = useAuthStore((state) => state.user);
   const sessionToken = useAuthStore((state) => state.sessionToken);
+  const language = useAuthStore((state) => state.language);
   const matches = useTripStore((state) => state.matches);
   const setMatches = useTripStore((state) => state.setMatches);
   const setSelectedMatch = useTripStore((state) => state.setSelectedMatch);
@@ -100,7 +102,7 @@ export function SearchPage() {
 
   async function search() {
     if (!origin || !destination) {
-      setError("Choose both a from and to location");
+      setError(t(language, "selectBothPlaces"));
       return;
     }
     setSearching(true);
@@ -147,7 +149,7 @@ export function SearchPage() {
     <Page width="xl">
       <PageHeader
         title={firstName ? `Where to, ${firstName}?` : "Where to?"}
-        subtitle="Compare verified drivers, fares, and seats in one search."
+        subtitle={t(language, "searchPageSubtitle")}
       />
 
       <Card className="p-5 sm:p-6">
@@ -183,18 +185,18 @@ export function SearchPage() {
             </div>
           ) : matches.length === 0 ? (
             <EmptyState
-              title="No rides on this route yet"
-              body="Try a nearby date, or post the trip yourself if you're driving that way."
+              title={t(language, "noRidesTitleWeb")}
+              body={t(language, "noRidesBodyWeb")}
               action={
                 <PrimaryButton type="button" onClick={() => navigate(sessionToken ? "/post" : "/login")}>
-                  Post a ride
+                  {t(language, "postRide")}
                 </PrimaryButton>
               }
             />
           ) : (
             <>
               <p className="mb-4 text-sm font-semibold text-ink-faint">
-                {matches.length} ride{matches.length === 1 ? "" : "s"} found
+                {matches.length} {t(language, matches.length === 1 ? "rideFoundSingular" : "rideFoundPlural")}
               </p>
               <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
                 {matches.map((trip) => (
