@@ -4,7 +4,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useFocusEffect } from "@react-navigation/native";
 import type { Booking, Trip } from "@rideshare/types";
 import { bookingGet, paymentGet, paymentPost } from "../../services/api";
-import { openUpiCheckout } from "../../services/razorpay";
+import { openRazorpayCheckout } from "../../services/razorpay";
 import { formatInr } from "../../utils/formatCurrency";
 import { formatTripWhen } from "../../utils/datetime";
 import { t } from "../../i18n/translations";
@@ -201,8 +201,19 @@ function BondPrompt({ tripId }: { tripId: string }) {
     setPaying(true);
     setError(null);
     try {
-      const order = await paymentPost<{ orderId: string; amountPaise: number }>("/trip-bond/order", { tripId });
-      await openUpiCheckout(order.orderId, order.amountPaise / 100);
+      const order = await paymentPost<{ orderId: string; amountPaise: number; keyId: string }>(
+        "/trip-bond/order",
+        { tripId }
+      );
+      await openRazorpayCheckout({
+        keyId: order.keyId,
+        orderId: order.orderId,
+        amountPaise: order.amountPaise,
+        description: "RideShare India cancellation bond",
+      });
+      // The bond flow has no client-side verify endpoint — Razorpay's webhook
+      // confirms the payment server-side, and this poll is the confirmation
+      // signal (may need a moment if the webhook hasn't landed yet).
       const status = await paymentGet<{ status: string }>(`/trip-bond/status?tripId=${tripId}`);
       if (status.status === "paid") {
         setPaid(true);

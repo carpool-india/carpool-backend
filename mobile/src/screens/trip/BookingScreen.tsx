@@ -6,7 +6,7 @@ import { PrimaryButton } from "../../components/ui/PrimaryButton";
 import { Screen } from "../../components/ui/Screen";
 import { PriceBreakdownView } from "../../components/PriceBreakdown";
 import { bookingPost, paymentGet, paymentPost } from "../../services/api";
-import { openUpiCheckout } from "../../services/razorpay";
+import { openRazorpayCheckout } from "../../services/razorpay";
 import { navigateRoot } from "../../navigation/navigateRoot";
 import { useTripStore } from "../../store/tripStore";
 import { t } from "../../i18n/translations";
@@ -75,17 +75,33 @@ export function BookingScreen({
         pickupPoint: trip.pickupPoint,
         dropoffPoint: trip.dropoffPoint,
       });
-      const order = await paymentPost<{ orderId: string | null; amountPaise: number; alreadyConfirmed: boolean }>(
-        "/order",
-        { bookingId: created.booking.id }
-      );
+      const order = await paymentPost<{
+        orderId: string | null;
+        amountPaise: number;
+        alreadyConfirmed: boolean;
+        keyId?: string;
+      }>("/order", { bookingId: created.booking.id });
       if (order.alreadyConfirmed || !order.orderId) {
         setActiveBooking({ ...created.booking, status: "confirmed" });
         setActiveTrip(trip);
         navigation.navigate("BookingConfirm", { bookingId: created.booking.id });
         return;
       }
-      await openUpiCheckout(order.orderId, order.amountPaise / 100);
+      const result = await openRazorpayCheckout({
+        keyId: order.keyId ?? "",
+        orderId: order.orderId,
+        amountPaise: order.amountPaise,
+        description: "RideShare India platform fee",
+      });
+      // Verify server-side right away so the booking is confirmed off the signed
+      // payment payload, not just the SDK resolving; the /status poll below stays
+      // as a confirmation/fallback layer, not the only signal of success.
+      await paymentPost("/verify", {
+        bookingId: created.booking.id,
+        razorpayOrderId: result.razorpay_order_id,
+        razorpayPaymentId: result.razorpay_payment_id,
+        razorpaySignature: result.razorpay_signature,
+      });
       const status = await paymentGet<{ status: string }>(`/status?bookingId=${created.booking.id}`);
       if (status.status !== "captured") {
         setActiveBooking(created.booking);

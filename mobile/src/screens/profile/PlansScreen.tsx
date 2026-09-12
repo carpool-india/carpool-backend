@@ -4,7 +4,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useFocusEffect } from "@react-navigation/native";
 import { SUBSCRIPTION_PLANS, type Subscription, type SubscriptionCadence, type SubscriptionPlanType } from "@rideshare/types";
 import { paymentGet, paymentPost } from "../../services/api";
-import { openUpiCheckout } from "../../services/razorpay";
+import { openRazorpayCheckout } from "../../services/razorpay";
 import { formatInr } from "../../utils/formatCurrency";
 import { t, type AppLanguage } from "../../i18n/translations";
 import { useAuthStore } from "../../store/authStore";
@@ -86,11 +86,26 @@ export function PlansScreen() {
     setPurchasing(key);
     setError(null);
     try {
-      const order = await paymentPost<{ subscriptionId: string; orderId: string; amountPaise: number }>(
-        "/subscriptions/order",
-        { planType, cadence }
-      );
-      await openUpiCheckout(order.orderId, order.amountPaise / 100);
+      const order = await paymentPost<{
+        subscriptionId: string;
+        orderId: string;
+        amountPaise: number;
+        keyId: string;
+      }>("/subscriptions/order", { planType, cadence });
+      const result = await openRazorpayCheckout({
+        keyId: order.keyId,
+        orderId: order.orderId,
+        amountPaise: order.amountPaise,
+        description: "RideShare India subscription",
+      });
+      // Verify server-side off the signed payment payload right away; the status
+      // poll below stays as a confirmation/fallback layer, not the only signal.
+      await paymentPost("/subscriptions/verify", {
+        subscriptionId: order.subscriptionId,
+        razorpayOrderId: result.razorpay_order_id,
+        razorpayPaymentId: result.razorpay_payment_id,
+        razorpaySignature: result.razorpay_signature,
+      });
       await paymentGet<{ status: string; expiresAt: string | null }>(
         `/subscriptions/status?subscriptionId=${order.subscriptionId}`
       );
