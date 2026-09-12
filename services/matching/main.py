@@ -29,9 +29,14 @@ def _load_root_env() -> None:
 _load_root_env()
 
 app = FastAPI(title="RideShare India Matching", version="1.0.0")
+# CORS_ORIGIN unset -> permissive (current/dev behavior, matches the notification
+# service's pattern). Set it once the frontend/console domains are known, since
+# this service is called directly from the browser (frontend/src/services/api.ts)
+# and mobile isn't subject to CORS regardless.
+_cors_origin = os.environ.get("CORS_ORIGIN")
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=[o.strip() for o in _cors_origin.split(",")] if _cors_origin else ["*"],
     allow_methods=["*"],
     allow_headers=["*"],
 )

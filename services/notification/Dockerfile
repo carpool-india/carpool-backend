@@ -2,8 +2,8 @@ FROM node:20-alpine AS build
 WORKDIR /app
 COPY package.json ./
 COPY tsconfig.base.json ./
-COPY shared ./shared
-COPY services/notification ./services/notification
+COPY backend/shared ./shared
+COPY backend/services/notification ./services/notification
 RUN npm install --workspace=@rideshare/notification --workspace=@rideshare/types
 WORKDIR /app/shared/types
 RUN npx tsc -p tsconfig.json

@@ -107,13 +107,14 @@ export async function createBooking(
 }
 
 async function isBlocked(client: SupabaseClient, userAId: string, userBId: string): Promise<boolean> {
-  const { data } = await client
-    .from("user_blocks")
-    .select("id")
-    .or(
-      `and(blocker_id.eq.${userAId},blocked_id.eq.${userBId}),and(blocker_id.eq.${userBId},blocked_id.eq.${userAId})`
-    )
-    .maybeSingle();
+  // user_blocks' RLS policy only lets a user SELECT rows where THEY are the
+  // blocker (see migrations/030_harden_reports_and_blocks_rls.sql), so a raw
+  // .from("user_blocks") query run with the passenger's own client can only ever
+  // see blocks the passenger placed -- a block the driver placed against the
+  // passenger is invisible to this query and would silently fail to be enforced.
+  // The users_have_mutual_block() RPC is SECURITY DEFINER and checks both
+  // directions without exposing the underlying rows either way.
+  const { data } = await client.rpc("users_have_mutual_block", { user_a: userAId, user_b: userBId });
   return Boolean(data);
 }
 

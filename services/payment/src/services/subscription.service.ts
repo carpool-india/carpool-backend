@@ -1,5 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { SUBSCRIPTION_PLANS, type SubscriptionCadence, type SubscriptionPlanType } from "@rideshare/types";
+import { loadEnv } from "../lib/env";
 import { HttpError } from "../lib/errors";
 import { capturePayment, createEscrowOrder, fetchCapturedPayment } from "./razorpay.service";
 
@@ -29,7 +30,7 @@ export async function createSubscriptionOrder(
   userId: string,
   planType: SubscriptionPlanType,
   cadence: SubscriptionCadence
-): Promise<{ subscriptionId: string; orderId: string; amountPaise: number }> {
+): Promise<{ subscriptionId: string; orderId: string; amountPaise: number; keyId: string }> {
   const plan = findPlan(planType, cadence);
   const amountPaise = Math.round(plan.amountInr * 100);
 
@@ -51,7 +52,8 @@ export async function createSubscriptionOrder(
   const order = await createEscrowOrder(subscription.id, amountPaise);
   await client.from("subscriptions").update({ razorpay_order_id: order.id }).eq("id", subscription.id);
 
-  return { subscriptionId: subscription.id, orderId: order.id, amountPaise };
+  const env = loadEnv();
+  return { subscriptionId: subscription.id, orderId: order.id, amountPaise, keyId: env.RAZORPAY_KEY_ID };
 }
 
 interface SubscriptionRow {

@@ -30,7 +30,7 @@ export async function createOrder(req: Request, res: Response): Promise<void> {
   const client = createUserClient(authed.accessToken);
   const { data: booking, error } = await client
     .from("bookings")
-    .select("id, service_fee, status, passenger_id")
+    .select("id, service_fee, status, passenger_id, razorpay_order_id")
     .eq("id", bookingId)
     .maybeSingle();
   if (error || !booking) {
@@ -47,30 +47,90 @@ export async function createOrder(req: Request, res: Response): Promise<void> {
     res.status(201).json({ orderId: null, amountPaise: 0, currency: "INR", bookingId, alreadyConfirmed: true });
     return;
   }
-  const order = await createEscrowOrder(bookingId, amountPaise);
-  await client
-    .from("bookings")
-    .update({ razorpay_order_id: order.id })
-    .eq("id", bookingId);
-  await client.from("payments").insert({
-    booking_id: bookingId,
-    payer_id: booking.passenger_id,
-    amount: amountPaise / 100,
-    service_fee: Number(booking.service_fee),
-    provider: "razorpay",
-    type: "escrow",
-    status: "created",
-    razorpay_order_id: order.id,
-  });
+  // A retried request (double-tap, timed-out response the client never saw) would
+  // otherwise create a second Razorpay order + a second `payments` row for the
+  // same booking, since status only flips to "confirmed" after verifyPayment.
+  // Booking stays "pending" in between, so re-serve the order already on file.
+  if (booking.razorpay_order_id) {
+    const env = loadEnv();
+    res.status(200).json({
+      orderId: booking.razorpay_order_id,
+      amountPaise,
+      currency: "INR",
+      keyId: env.RAZORPAY_KEY_ID,
+      bookingId,
+      alreadyConfirmed: false,
+    });
+    return;
+  }
   const env = loadEnv();
-  res.status(201).json({
-    orderId: order.id,
-    amountPaise: order.amount,
-    currency: "INR",
-    keyId: env.RAZORPAY_KEY_ID,
-    bookingId,
-    alreadyConfirmed: false,
-  });
+  // Claim the escrow row BEFORE calling Razorpay, not after: the earlier version
+  // of this fix called Razorpay first and relied on migration 029's unique index
+  // to catch the duplicate INSERT afterward, but that still let two concurrent
+  // requests both create a live Razorpay order before either INSERT landed —
+  // the DB index protects the row, not the external call. Inserting first makes
+  // the INSERT itself the lock, so only one concurrent request ever reaches
+  // Razorpay for a given booking.
+  const { data: claim, error: claimError } = await client
+    .from("payments")
+    .insert({
+      booking_id: bookingId,
+      payer_id: booking.passenger_id,
+      amount: amountPaise / 100,
+      service_fee: Number(booking.service_fee),
+      provider: "razorpay",
+      type: "escrow",
+      status: "created",
+      razorpay_order_id: null,
+    })
+    .select("id")
+    .single();
+  if (claimError) {
+    if (claimError.code === "23505") {
+      // Lost the race: another request already claimed this booking's escrow
+      // slot and is (or just finished) creating the real order. Poll briefly
+      // for it to land rather than immediately failing the client.
+      for (let attempt = 0; attempt < 5; attempt += 1) {
+        await new Promise((resolve) => setTimeout(resolve, 300));
+        const { data: refreshed } = await client
+          .from("bookings")
+          .select("razorpay_order_id")
+          .eq("id", bookingId)
+          .maybeSingle();
+        if (refreshed?.razorpay_order_id) {
+          res.status(200).json({
+            orderId: refreshed.razorpay_order_id,
+            amountPaise,
+            currency: "INR",
+            keyId: env.RAZORPAY_KEY_ID,
+            bookingId,
+            alreadyConfirmed: false,
+          });
+          return;
+        }
+      }
+      throw new HttpError(409, "conflict", "Another request is creating this order — try again in a moment");
+    }
+    throw claimError;
+  }
+  try {
+    const order = await createEscrowOrder(bookingId, amountPaise);
+    await client.from("bookings").update({ razorpay_order_id: order.id }).eq("id", bookingId);
+    await client.from("payments").update({ razorpay_order_id: order.id }).eq("id", claim.id);
+    res.status(201).json({
+      orderId: order.id,
+      amountPaise: order.amount,
+      currency: "INR",
+      keyId: env.RAZORPAY_KEY_ID,
+      bookingId,
+      alreadyConfirmed: false,
+    });
+  } catch (err) {
+    // Razorpay's create-order call itself failed after we claimed the slot —
+    // release it so a retry isn't permanently blocked by our own claim row.
+    await client.from("payments").delete().eq("id", claim.id);
+    throw err;
+  }
 }
 
 export async function verifyPayment(req: Request, res: Response): Promise<void> {
