@@ -2,14 +2,15 @@ import os
 from datetime import datetime
 
 import httpx
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 
 from models.schemas import GeoPoint, IntermediateStopRequest, IntermediateStopResult, MatchRequest, TripRecord
+from services.auth import require_auth_user
 from services.google_directions import decode_polyline, encode_polyline, fetch_route_polyline
 from services.haversine import haversine_km, nearest_index
 from services.route_matcher import MAX_DETOUR_KM, match_trips
 
-router = APIRouter()
+router = APIRouter(dependencies=[Depends(require_auth_user)])
 
 
 def _parse_point(raw: object) -> tuple[float, float]:

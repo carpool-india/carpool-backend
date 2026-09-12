@@ -1,4 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { loadEnv } from "../lib/env";
 import { HttpError } from "../lib/errors";
 import { capturePayment, createEscrowOrder, fetchCapturedPayment } from "./razorpay.service";
 
@@ -26,7 +27,7 @@ export async function createBondOrder(
   client: SupabaseClient,
   userId: string,
   tripId: string
-): Promise<{ orderId: string; amountPaise: number }> {
+): Promise<{ orderId: string; amountPaise: number; keyId: string }> {
   const trip = await loadOwnTrip(client, userId, tripId);
   if (trip.cancellation_bond_paid) {
     throw new HttpError(409, "conflict", "Cancellation bond is already paid for this trip");
@@ -42,7 +43,8 @@ export async function createBondOrder(
     status: "created",
     razorpay_order_id: order.id,
   });
-  return { orderId: order.id, amountPaise: CANCELLATION_BOND_PAISE };
+  const env = loadEnv();
+  return { orderId: order.id, amountPaise: CANCELLATION_BOND_PAISE, keyId: env.RAZORPAY_KEY_ID };
 }
 
 export async function pollBondStatus(

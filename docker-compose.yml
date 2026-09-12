@@ -41,5 +41,13 @@ services:
     command: centrifugo -c config.json
     volumes:
       - ./backend/centrifugo/config.json:/centrifugo/config.json
+    env_file: .env
+    environment:
+      # config.json ships with these blank; Centrifugo overlays scalar config
+      # keys from CENTRIFUGO_<KEY> env vars, so the real secrets never need to
+      # be committed. Must equal the app services' CENTRIFUGO_API_KEY /
+      # CENTRIFUGO_TOKEN_HMAC_SECRET so issued chat tokens verify.
+      CENTRIFUGO_API_KEY: ${CENTRIFUGO_API_KEY}
+      CENTRIFUGO_TOKEN_HMAC_SECRET_KEY: ${CENTRIFUGO_TOKEN_HMAC_SECRET}
     ports:
       - "8010:8000"

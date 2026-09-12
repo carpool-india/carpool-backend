@@ -14,6 +14,7 @@ import { sendSms } from "./services/sms.service";
 import { requestLoginOtp, verifyLoginOtp } from "./services/loginOtp.service";
 import { dispatchSos } from "./services/sos.service";
 import { sendBookingCard } from "./services/whatsapp.service";
+import { createRequireInternalSecret } from "./middleware/internalSecret";
 
 const app = express();
 // Behind ngrok in dev and a reverse proxy/load balancer in production — trust one hop
@@ -27,21 +28,15 @@ const corsOrigin = process.env.CORS_ORIGIN;
 app.use(cors(corsOrigin ? { origin: corsOrigin.split(",").map((value) => value.trim()) } : undefined));
 
 // /push, /sms, /whatsapp/booking, and /sos are meant to be called by other backend
-// services only — never directly by the mobile app. If INTERNAL_SERVICE_SECRET is
-// set, require it on those routes so this service can't be used as a free SMS/push
-// relay by anyone who finds the URL.
+// services only — never directly by the mobile app. In production this secret is
+// mandatory: without it, this service would be an open SMS/push/SOS relay to
+// anyone who finds the URL. In dev it's optional so a bare `npm run notification`
+// without a full .env still works.
 const internalServiceSecret = process.env.INTERNAL_SERVICE_SECRET;
-function requireInternalSecret(req: Request, res: Response, next: NextFunction): void {
-  if (!internalServiceSecret) {
-    next();
-    return;
-  }
-  if (req.header("x-internal-secret") !== internalServiceSecret) {
-    res.status(401).json({ error: "unauthorized", message: "Missing or invalid internal service credential" });
-    return;
-  }
-  next();
+if (!internalServiceSecret && process.env.NODE_ENV === "production") {
+  throw new Error("INTERNAL_SERVICE_SECRET must be set in production");
 }
+const requireInternalSecret = createRequireInternalSecret(internalServiceSecret);
 app.use((req, res, next) => {
   const start = Date.now();
   res.on("finish", () => {
@@ -107,8 +102,8 @@ const bookingCardSchema = z.object({
 const sosSchema = z.object({
   userName: z.string(),
   userPhone: z.string(),
-  lat: z.number(),
-  lng: z.number(),
+  lat: z.number().nullable(),
+  lng: z.number().nullable(),
   tripId: z.string().uuid(),
   emergencyContacts: z.array(z.object({ name: z.string(), phone: z.string() })),
   adminFcmTokens: z.array(z.string()),

@@ -69,8 +69,11 @@ export const createBookingSchema = z.object({
 export const sosTriggerSchema = z.object({
   tripId: uuidSchema,
   bookingId: uuidSchema.optional(),
-  lat: z.number().gte(-90).lte(90),
-  lng: z.number().gte(-180).lte(180),
+  // Nullable, not defaulted to 0/0 by callers: a real emergency with no GPS fix
+  // yet must not silently dispatch fabricated coordinates (0,0 is a real point
+  // in the Gulf of Guinea) to emergency contacts/admins.
+  lat: z.number().gte(-90).lte(90).nullable(),
+  lng: z.number().gte(-180).lte(180).nullable(),
   holdDurationMs: z.number().int().min(2000),
 });
 

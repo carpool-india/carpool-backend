@@ -1,26 +1,38 @@
 import { z } from "zod";
 
-const envSchema = z.object({
-  NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
-  BOOKING_SERVICE_PORT: z.coerce.number().default(3002),
-  SUPABASE_URL: z.string().url(),
-  SUPABASE_ANON_KEY: z.string().min(20),
-  SUPABASE_SERVICE_ROLE_KEY: z.string().min(20),
-  MATCHING_SERVICE_URL: z.string().url().default("http://localhost:8001"),
-  PAYMENT_SERVICE_URL: z.string().url().default("http://localhost:3003"),
-  NOTIFICATION_SERVICE_URL: z.string().url().default("http://localhost:3005"),
-  GOOGLE_MAPS_API_KEY: z.string().optional().default(""),
-  HYPERVERGE_APP_ID: z.string().optional().default(""),
-  HYPERVERGE_APP_KEY: z.string().optional().default(""),
-  R2_ACCOUNT_ID: z.string().optional().default(""),
-  R2_ACCESS_KEY_ID: z.string().optional().default(""),
-  R2_SECRET_ACCESS_KEY: z.string().optional().default(""),
-  R2_BUCKET: z.string().optional().default(""),
-  R2_PUBLIC_BASE_URL: z.string().optional().default(""),
-  CENTRIFUGO_API_URL: z.string().url().default("http://localhost:8010"),
-  CENTRIFUGO_API_KEY: z.string().min(1),
-  CENTRIFUGO_TOKEN_HMAC_SECRET: z.string().min(1),
-});
+const envSchema = z
+  .object({
+    NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
+    BOOKING_SERVICE_PORT: z.coerce.number().default(3002),
+    SUPABASE_URL: z.string().url(),
+    SUPABASE_ANON_KEY: z.string().min(20),
+    SUPABASE_SERVICE_ROLE_KEY: z.string().min(20),
+    MATCHING_SERVICE_URL: z.string().url().default("http://localhost:8001"),
+    PAYMENT_SERVICE_URL: z.string().url().default("http://localhost:3003"),
+    NOTIFICATION_SERVICE_URL: z.string().url().default("http://localhost:3005"),
+    GOOGLE_MAPS_API_KEY: z.string().optional().default(""),
+    HYPERVERGE_APP_ID: z.string().optional().default(""),
+    HYPERVERGE_APP_KEY: z.string().optional().default(""),
+    R2_ACCOUNT_ID: z.string().optional().default(""),
+    R2_ACCESS_KEY_ID: z.string().optional().default(""),
+    R2_SECRET_ACCESS_KEY: z.string().optional().default(""),
+    R2_BUCKET: z.string().optional().default(""),
+    R2_PUBLIC_BASE_URL: z.string().optional().default(""),
+    CENTRIFUGO_API_URL: z.string().url().default("http://localhost:8010"),
+    CENTRIFUGO_API_KEY: z.string().min(1),
+    CENTRIFUGO_TOKEN_HMAC_SECRET: z.string().min(1),
+  })
+  // R2 has no code-level fallback (r2.ts just throws an opaque S3/DNS error on
+  // first KYC/profile-photo upload) so an unset var must fail fast at boot in
+  // production rather than fail on some user's first upload attempt.
+  .superRefine((val, ctx) => {
+    if (val.NODE_ENV !== "production") return;
+    for (const key of ["R2_ACCOUNT_ID", "R2_ACCESS_KEY_ID", "R2_SECRET_ACCESS_KEY", "R2_BUCKET", "R2_PUBLIC_BASE_URL"] as const) {
+      if (!val[key]) {
+        ctx.addIssue({ code: z.ZodIssueCode.custom, message: `${key} must be set in production`, path: [key] });
+      }
+    }
+  });
 
 export type BookingEnv = z.infer<typeof envSchema>;
 

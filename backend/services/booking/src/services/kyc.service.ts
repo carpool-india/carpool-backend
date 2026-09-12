@@ -31,11 +31,16 @@ export async function verifyKycDocument(
   const env = loadEnv();
 
   let verified = false;
-  let status = "failed";
+  // "pending_review" (not "failed") is the fallback for everything that isn't an
+  // explicit pass/fail verdict from HyperVerge itself — keys unset, a transient
+  // HTTP/network error, or a response shape we don't recognize. A transient
+  // HyperVerge outage rejecting someone's real Aadhaar/DL would be far worse
+  // than routing it to manual admin review instead.
+  let status = "pending_review";
+  let needsAdminReview = true;
 
   if (!env.HYPERVERGE_APP_ID || !env.HYPERVERGE_APP_KEY) {
-    void notifyAdminsOfPendingKyc(userId, input.docType).catch(() => undefined);
-    return { verified: false, status: "pending_review" };
+    // keys unset: fall through with the pending_review default above.
   } else {
     try {
       const response = await fetch("https://ind.idv.hyperverge.co/v1/verify", {
@@ -58,19 +63,32 @@ export async function verifyKycDocument(
         // Checked defensively here against the common shapes their APIs use.
         const nested = (body.result ?? body.data ?? {}) as Record<string, unknown>;
         const statusField = (body.status ?? nested.status) as string | undefined;
-        verified = statusField === "success" || statusField === "auto_approved" || statusField === "verified";
-        status = statusField ?? (verified ? "verified" : "unverified");
-      } else {
-        status = `http_${response.status}`;
+        if (statusField === "success" || statusField === "auto_approved" || statusField === "verified") {
+          verified = true;
+          status = statusField;
+          needsAdminReview = false;
+        } else if (statusField === "failed" || statusField === "rejected" || statusField === "auto_declined") {
+          // An explicit rejection verdict from HyperVerge — not a plumbing error —
+          // so it's safe to fail the document outright instead of queuing review.
+          status = statusField;
+          needsAdminReview = false;
+        }
+        // Any other/unrecognized statusField falls through to pending_review.
       }
+      // A non-2xx response falls through to pending_review; the specific HTTP
+      // status isn't actionable to the user and shouldn't fail their document.
     } catch {
-      status = "network_error";
+      // network_error falls through to pending_review too.
     }
+  }
+
+  if (needsAdminReview) {
+    void notifyAdminsOfPendingKyc(userId, input.docType).catch(() => undefined);
   }
 
   await client
     .from("kyc_sessions")
-    .update({ status: verified ? "verified" : "failed" })
+    .update({ status: verified ? "verified" : status === "pending_review" ? "pending" : "failed" })
     .eq("hyperverge_txn_id", input.hyperVergeTxnId);
 
   if (verified) {

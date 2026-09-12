@@ -6,7 +6,7 @@ import { HttpError } from "../lib/errors";
 export async function triggerSos(
   accessToken: string,
   supabaseAuthId: string,
-  input: { tripId: string; bookingId?: string; lat: number; lng: number; holdDurationMs: number }
+  input: { tripId: string; bookingId?: string; lat: number | null; lng: number | null; holdDurationMs: number }
 ): Promise<{ eventId: string; dispatched: boolean }> {
   if (input.holdDurationMs < 2000) {
     throw new HttpError(400, "hold_too_short", "SOS requires a 2 second hold");
