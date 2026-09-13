@@ -1,6 +1,6 @@
 import { getAdminClient } from "../lib/supabase";
 import { HttpError } from "../lib/errors";
-import { refundPayment } from "./razorpay.service";
+import { refundBooking } from "./refund.service";
 
 function range(page: number, limit: number): [number, number] {
   const start = (page - 1) * limit;
@@ -93,7 +93,7 @@ export async function adminRefundBooking(bookingId: string, reason: string) {
   const client = getAdminClient();
   const { data: booking, error } = await client
     .from("bookings")
-    .select("id, passenger_id, razorpay_payment_id, total_amount, status")
+    .select("id, razorpay_payment_id, status")
     .eq("id", bookingId)
     .maybeSingle();
   if (error || !booking) {
@@ -103,28 +103,29 @@ export async function adminRefundBooking(bookingId: string, reason: string) {
     throw new HttpError(409, "conflict", "Booking is already cancelled");
   }
 
-  let refundId = "ops_recorded";
   if (booking.razorpay_payment_id) {
-    try {
-      refundId = await refundPayment(
-        booking.razorpay_payment_id as string,
-        Math.round(Number(booking.total_amount) * 100)
-      );
-    } catch {
-      refundId = "ops_recorded";
-    }
+    // A real captured payment exists -- reuse the same claim-before-calling-
+    // Razorpay idempotency guard the passenger-initiated refund uses, instead
+    // of this function's old standalone insert-then-update, which had no
+    // protection against two admins (or a retry) both calling Razorpay and
+    // both recording a refund for the same booking, and silently recorded a
+    // fabricated "ops_recorded" success whenever the real Razorpay call threw.
+    const { refundId } = await refundBooking(client, bookingId, reason);
+    return { refundId, reason };
   }
 
-  await client.from("payments").insert({
-    booking_id: bookingId,
-    payer_id: booking.passenger_id,
-    amount: Number(booking.total_amount),
-    service_fee: 0,
-    provider: "razorpay",
-    type: "refund",
-    status: "refunded",
-    razorpay_payment_id: booking.razorpay_payment_id,
-  });
-  await client.from("bookings").update({ status: "cancelled" }).eq("id", bookingId);
-  return { refundId, reason };
+  // No captured payment to refund through Razorpay (e.g. admin cancelling
+  // before the passenger paid) -- just cancel, guarding against a concurrent
+  // cancel/refund the same way: the conditional UPDATE only succeeds once.
+  const { data: cancelled } = await client
+    .from("bookings")
+    .update({ status: "cancelled" })
+    .eq("id", bookingId)
+    .neq("status", "cancelled")
+    .select("id")
+    .maybeSingle();
+  if (!cancelled) {
+    throw new HttpError(409, "conflict", "Booking is already cancelled");
+  }
+  return { refundId: "no_payment_to_refund", reason };
 }

@@ -232,8 +232,14 @@ async function notifyBookingPaid(client: ReturnType<typeof createUserClient>, bo
       driver_id: string;
       vehicles: { vehicle_type: string; registration_number: string } | null;
     }>();
+  // passenger is the caller's own row (self-readable); driver is someone else's,
+  // so their name comes from the public view rather than the `users` table.
   const { data: passenger } = await client.from("users").select("name, phone").eq("id", booking.passenger_id).maybeSingle();
-  const { data: driver } = await client.from("users").select("name").eq("id", trip?.driver_id).maybeSingle();
+  const { data: driver } = await client
+    .from("user_public_profiles")
+    .select("name")
+    .eq("id", trip?.driver_id)
+    .maybeSingle();
   if (!passenger?.phone || !trip) {
     return;
   }

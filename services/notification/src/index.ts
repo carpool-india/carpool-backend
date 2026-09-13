@@ -16,16 +16,21 @@ import { dispatchSos } from "./services/sos.service";
 import { sendBookingCard } from "./services/whatsapp.service";
 import { createRequireInternalSecret } from "./middleware/internalSecret";
 
+// Validated eagerly so a misconfigured production deploy (e.g. missing
+// CORS_ORIGIN) fails at boot instead of serving requests.
+const startupEnv = loadEnv();
+
 const app = express();
 // Behind ngrok in dev and a reverse proxy/load balancer in production — trust one hop
 // so rate limiting keys off the real client IP (X-Forwarded-For) instead of the proxy.
 app.set("trust proxy", 1);
 app.use(helmet());
-// CORS_ORIGIN unset -> permissive (current/dev behavior). Set it once the console's
-// domain is known to restrict browser access to just that origin; mobile isn't
-// subject to CORS so this never affects the app.
-const corsOrigin = process.env.CORS_ORIGIN;
-app.use(cors(corsOrigin ? { origin: corsOrigin.split(",").map((value) => value.trim()) } : undefined));
+// CORS_ORIGIN unset -> permissive (dev only; loadEnv() above refuses to boot
+// in production without it). Mobile isn't subject to CORS so this never
+// affects the app -- only the console/frontend's browser-side requests.
+app.use(
+  cors(startupEnv.CORS_ORIGIN ? { origin: startupEnv.CORS_ORIGIN.split(",").map((value) => value.trim()) } : undefined)
+);
 
 // /push, /sms, /whatsapp/booking, and /sos are meant to be called by other backend
 // services only — never directly by the mobile app. In production this secret is

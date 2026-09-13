@@ -25,10 +25,10 @@ const env = process.env.NODE_ENV === "test" ? null : loadEnv();
 const app = express();
 
 app.use(helmet());
-// CORS_ORIGIN unset -> permissive (current/dev behavior). Set it once the console's
-// domain is known to restrict browser access to just that origin; mobile isn't
-// subject to CORS so this never affects the app.
-const corsOrigin = process.env.CORS_ORIGIN;
+// CORS_ORIGIN unset -> permissive (dev/test only; loadEnv() above refuses to
+// boot in production without it). Mobile isn't subject to CORS so this never
+// affects the app -- only the console/frontend's browser-side requests.
+const corsOrigin = env?.CORS_ORIGIN;
 app.use(cors(corsOrigin ? { origin: corsOrigin.split(",").map((value) => value.trim()) } : undefined));
 app.post(
   "/webhooks/razorpay",

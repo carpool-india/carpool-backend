@@ -22,7 +22,7 @@ interface BookingRow {
   pickup_point: string | null;
   dropoff_point: string | null;
   created_at: string;
-  trips?: { origin_name: string; destination_name: string; departure_time: string } | null;
+  trips?: { origin_name: string; destination_name: string; departure_time: string; driver_id: string } | null;
 }
 
 export async function createBooking(
@@ -317,7 +317,7 @@ export async function startTrip(
 export async function getBooking(client: SupabaseClient, bookingId: string): Promise<Booking> {
   const { data, error } = await client
     .from("bookings")
-    .select("*, trips(origin_name, destination_name, departure_time)")
+    .select("*, trips(origin_name, destination_name, departure_time, driver_id)")
     .eq("id", bookingId)
     .maybeSingle<BookingRow>();
   if (error) {
@@ -336,7 +336,7 @@ export async function listMyBookings(
   const userId = await resolveAppUserId(client, supabaseAuthId);
   const { data, error } = await client
     .from("bookings")
-    .select("*, trips(origin_name, destination_name, departure_time)")
+    .select("*, trips(origin_name, destination_name, departure_time, driver_id)")
     .eq("passenger_id", userId)
     .order("created_at", { ascending: false });
   if (error) {
@@ -373,6 +373,7 @@ function mapBooking(
           originName: row.trips.origin_name,
           destinationName: row.trips.destination_name,
           departureTime: row.trips.departure_time,
+          driverId: row.trips.driver_id,
         }
       : null,
   };

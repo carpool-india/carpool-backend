@@ -22,21 +22,43 @@ interface MessageRow {
   sender_id: string;
   body: string;
   created_at: string;
-  users: { name: string | null; photo_url: string | null } | { name: string | null; photo_url: string | null }[] | null;
+}
+
+interface PublicProfile {
+  name: string | null;
+  photo_url: string | null;
 }
 
 function tripChannel(tripId: string): string {
   return `trip:${tripId}`;
 }
 
-function mapMessage(row: MessageRow): ChatMessage {
-  const sender = Array.isArray(row.users) ? row.users[0] : row.users;
+// `users` only exposes a caller's own row via RLS -- a display name/photo for
+// someone else (a trip's other party) has to come from this narrow, unrestricted
+// view instead of embedding `users(...)` directly in a PostgREST select.
+async function fetchPublicProfiles(
+  client: SupabaseClient,
+  userIds: Iterable<string>
+): Promise<Map<string, PublicProfile>> {
+  const ids = Array.from(new Set(userIds));
+  const profiles = new Map<string, PublicProfile>();
+  if (ids.length === 0) {
+    return profiles;
+  }
+  const { data } = await client.from("user_public_profiles").select("id, name, photo_url").in("id", ids);
+  for (const row of (data ?? []) as Array<{ id: string; name: string | null; photo_url: string | null }>) {
+    profiles.set(row.id, { name: row.name, photo_url: row.photo_url });
+  }
+  return profiles;
+}
+
+function mapMessage(row: MessageRow, profile: PublicProfile | undefined): ChatMessage {
   return {
     id: row.id,
     tripId: row.trip_id,
     senderId: row.sender_id,
-    senderName: sender?.name ?? null,
-    senderPhotoUrl: sender?.photo_url ?? null,
+    senderName: profile?.name ?? null,
+    senderPhotoUrl: profile?.photo_url ?? null,
     body: row.body,
     createdAt: row.created_at,
   };
@@ -78,14 +100,19 @@ export async function listMessages(
   await assertTripParty(client, tripId);
   const { data, error } = await client
     .from("messages")
-    .select("id, trip_id, sender_id, body, created_at, users(name, photo_url)")
+    .select("id, trip_id, sender_id, body, created_at")
     .eq("trip_id", tripId)
     .order("created_at", { ascending: true })
     .limit(200);
   if (error) {
     throw badRequest(error.message);
   }
-  return (data as unknown as MessageRow[]).map(mapMessage);
+  const rows = data as unknown as MessageRow[];
+  const profiles = await fetchPublicProfiles(
+    client,
+    rows.map((row) => row.sender_id)
+  );
+  return rows.map((row) => mapMessage(row, profiles.get(row.sender_id)));
 }
 
 export interface ChatPreview {
@@ -99,9 +126,9 @@ export interface ChatPreview {
 
 interface PreviewRow {
   trip_id: string;
+  sender_id: string;
   body: string;
   created_at: string;
-  users: { name: string | null } | { name: string | null }[] | null;
   trips: { origin_name: string; destination_name: string } | { origin_name: string; destination_name: string }[] | null;
 }
 
@@ -109,32 +136,39 @@ export async function listMyChatPreviews(client: SupabaseClient, supabaseAuthId:
   await resolveAppUserId(client, supabaseAuthId);
   const { data, error } = await client
     .from("messages")
-    .select("trip_id, body, created_at, users(name), trips(origin_name, destination_name)")
+    .select("trip_id, sender_id, body, created_at, trips(origin_name, destination_name)")
     .order("created_at", { ascending: false })
     .limit(500);
   if (error) {
     throw badRequest(error.message);
   }
 
+  const rows = data as unknown as PreviewRow[];
   const seen = new Set<string>();
-  const previews: ChatPreview[] = [];
-  for (const row of data as unknown as PreviewRow[]) {
+  const latestPerTrip: PreviewRow[] = [];
+  for (const row of rows) {
     if (seen.has(row.trip_id)) {
       continue;
     }
     seen.add(row.trip_id);
+    latestPerTrip.push(row);
+  }
+  const profiles = await fetchPublicProfiles(
+    client,
+    latestPerTrip.map((row) => row.sender_id)
+  );
+
+  return latestPerTrip.map((row) => {
     const trip = Array.isArray(row.trips) ? row.trips[0] : row.trips;
-    const sender = Array.isArray(row.users) ? row.users[0] : row.users;
-    previews.push({
+    return {
       tripId: row.trip_id,
       originName: trip?.origin_name ?? "",
       destinationName: trip?.destination_name ?? "",
       lastMessageBody: row.body,
-      lastMessageSenderName: sender?.name ?? null,
+      lastMessageSenderName: profiles.get(row.sender_id)?.name ?? null,
       lastMessageAt: row.created_at,
-    });
-  }
-  return previews;
+    };
+  });
 }
 
 export async function sendMessage(
@@ -150,12 +184,13 @@ export async function sendMessage(
   const { data, error } = await client
     .from("messages")
     .insert({ trip_id: tripId, sender_id: appUserId, body })
-    .select("id, trip_id, sender_id, body, created_at, users(name, photo_url)")
+    .select("id, trip_id, sender_id, body, created_at")
     .single();
   if (error || !data) {
     throw badRequest(error?.message ?? "Unable to send message");
   }
-  const message = mapMessage(data as unknown as MessageRow);
+  const profiles = await fetchPublicProfiles(client, [appUserId]);
+  const message = mapMessage(data as unknown as MessageRow, profiles.get(appUserId));
 
   await fetch(`${env.CENTRIFUGO_API_URL}/api/publish`, {
     method: "POST",
