@@ -17,18 +17,11 @@ export interface LiveOrMock<T> {
   isMock: boolean;
 }
 
-export async function liveOrMock<T>(request: () => Promise<T>, mock: T): Promise<LiveOrMock<T>> {
-  try {
-    // A successful response that happens to be empty (e.g. genuinely zero open
-    // SOS events) is real data, not a reason to fall back to fabricated demo
-    // rows -- only an actual request failure should do that. Screens render
-    // their own empty state (DataTable's emptyTitle/emptyHint) for this case.
-    return { data: await request(), isMock: false };
-  } catch {
-    return { data: mock, isMock: true };
-  }
+// Keep the existing response shape while screens migrate. Never replace failed
+// admin requests with sample records: callers must render their error state.
+export async function liveOrMock<T>(request: () => Promise<T>, _mock: T): Promise<LiveOrMock<T>> {
+  return { data: await request(), isMock: false };
 }
-
 export const MOCK_OVERVIEW = {
   totalUsers: 1284,
   kycPending: 37,

@@ -11,7 +11,9 @@
     "web": "expo start --web",
     "typecheck": "tsc --noEmit",
     "test": "jest --passWithNoTests",
-    "postinstall": "npm run build --prefix ../backend/shared/types && npm run build --prefix ../backend/shared/utils"
+    "postinstall": "npm run build --prefix ../backend/shared/types && npm run build --prefix ../backend/shared/utils",
+    "eas-build-post-install": "node scripts/validate-build-config.cjs",
+    "validate:build": "node scripts/validate-build-config.cjs"
   },
   "dependencies": {
     "@expo/vector-icons": "^15.0.3",

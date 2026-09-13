@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { paymentGet, paymentPost } from "../lib/api";
 import { Badge } from "../components/Badge";
@@ -8,7 +8,7 @@ import { FilterBar } from "../components/FilterBar";
 import { ActionBanner } from "../components/ActionBanner";
 import { ActionMenu } from "../components/ActionMenu";
 import { DemoDataBanner } from "../components/DemoDataBanner";
-import { liveOrMock, LiveOrMock, MOCK_PAYMENTS, paginate } from "../lib/mockData";
+import { liveOrMock, MOCK_PAYMENTS, paginate } from "../lib/mockData";
 
 interface AdminPayment {
   id: string;
@@ -36,6 +36,8 @@ export function PaymentsScreen() {
   const [status, setStatus] = useState("");
   const [notice, setNotice] = useState<string | null>(null);
   const queryClient = useQueryClient();
+  const refundInFlight = useRef(false);
+  const [refunding, setRefunding] = useState(false);
 
   const query = useQuery({
     queryKey: ["admin-payments", page, type, status],
@@ -54,34 +56,29 @@ export function PaymentsScreen() {
   });
 
   async function refund(payment: AdminPayment) {
+    if (refundInFlight.current) return;
     if (!payment.booking_id) {
       setNotice("This payment is not linked to a booking.");
       return;
     }
-    if (!window.confirm("Issue a refund for this booking?")) {
-      return;
-    }
+    if (!window.confirm("Issue a refund for this booking?")) return;
+    refundInFlight.current = true;
+    setRefunding(true);
     setNotice(null);
     try {
       await paymentPost("/admin/refunds", { bookingId: payment.booking_id, reason: "Admin refund" });
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["admin-payments"] }),
+        queryClient.invalidateQueries({ queryKey: ["admin-bookings"] }),
+        queryClient.invalidateQueries({ queryKey: ["admin-revenue"] }),
+      ]);
     } catch (err) {
       setNotice(err instanceof Error ? err.message : "Unable to refund");
+    } finally {
+      refundInFlight.current = false;
+      setRefunding(false);
     }
-    queryClient.setQueryData<LiveOrMock<{ items: AdminPayment[]; total: number }>>(["admin-payments", page, type, status], (old) =>
-      old
-        ? {
-            ...old,
-            data: {
-              ...old.data,
-              items: old.data.items.map((item) =>
-                item.id === payment.id ? { ...item, status: "refunded", type: "refund" } : item
-              ),
-            },
-          }
-        : old
-    );
   }
-
   const isMock = Boolean(query.data?.isMock);
 
   return (
@@ -136,8 +133,8 @@ export function PaymentsScreen() {
             align: "right",
             width: "64px",
             render: (payment) =>
-              payment.status === "refunded" || payment.type === "refund" ? null : (
-                <ActionMenu items={[{ label: "Refund", tone: "brand", onSelect: () => void refund(payment) }]} />
+              payment.status !== "captured" || payment.type !== "escrow" || !payment.booking_id ? null : (
+                <ActionMenu items={[{ label: "Refund", tone: "brand", disabled: refunding, onSelect: () => void refund(payment) }]} />
               ),
           },
         ]}

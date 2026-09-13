@@ -1,0 +1,23 @@
+node_modules/
+dist/
+.expo/
+.turbo/
+coverage/
+*.log
+.env
+.env.*
+!.env.example
+.DS_Store
+ios/
+android/
+*.tsbuildinfo
+__pycache__/
+.pytest_cache/
+.venv/
+venv/
+web-build/
+.claude/scheduled_tasks.lock
+google-service-account.json
+
+# Unrelated nested checkout; not needed by the mobile workspace.
+/RideSharePush/

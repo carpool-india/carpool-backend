@@ -8,7 +8,7 @@ import { FilterBar } from "../components/FilterBar";
 import { ActionBanner } from "../components/ActionBanner";
 import { ActionMenu } from "../components/ActionMenu";
 import { DemoDataBanner } from "../components/DemoDataBanner";
-import { liveOrMock, LiveOrMock, MOCK_REPORTS, paginate } from "../lib/mockData";
+import { liveOrMock, MOCK_REPORTS, paginate } from "../lib/mockData";
 
 type ReportStatus = "open" | "reviewed" | "dismissed";
 
@@ -70,14 +70,7 @@ export function ReportsScreen() {
       setNotice(err instanceof Error ? err.message : "Unable to update report");
       return;
     }
-    queryClient.setQueryData<LiveOrMock<{ items: UserReport[]; total: number }>>(listKey, (old) =>
-      old
-        ? {
-            ...old,
-            data: { ...old.data, items: old.data.items.map((item) => (item.id === report.id ? { ...item, status: next } : item)) },
-          }
-        : old
-    );
+    await queryClient.invalidateQueries({ queryKey: ["admin-reports"] });
   }
 
   const isMock = Boolean(query.data?.isMock);

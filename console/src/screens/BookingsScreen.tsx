@@ -7,8 +7,6 @@ import { DataTable } from "../components/DataTable";
 import { FilterBar } from "../components/FilterBar";
 import { ActionBanner } from "../components/ActionBanner";
 import { ActionMenu } from "../components/ActionMenu";
-import { DemoDataBanner } from "../components/DemoDataBanner";
-import { liveOrMock, LiveOrMock, MOCK_BOOKINGS, paginate } from "../lib/mockData";
 
 interface AdminBooking {
   id: string;
@@ -37,26 +35,17 @@ export function BookingsScreen() {
   const queryKey = ["admin-bookings", page, status];
   const query = useQuery({
     queryKey,
-    queryFn: () => {
-      const filtered = MOCK_BOOKINGS.filter((booking) => !status || booking.status === status);
-      return liveOrMock(
-        () =>
-          bookingGet<{ items: AdminBooking[]; total: number }>(
-            `/admin/bookings?page=${page}&limit=20${status ? `&status=${status}` : ""}`
-          ),
-        paginate(filtered, page, 20)
-      );
-    },
+    queryFn: () =>
+      bookingGet<{ items: AdminBooking[]; total: number }>(
+        `/admin/bookings?page=${page}&limit=20${status ? `&status=${status}` : ""}`
+      ),
   });
 
-  function patchStatus(id: string, next: string) {
-    queryClient.setQueryData<LiveOrMock<{ items: AdminBooking[]; total: number }>>(queryKey, (old) =>
-      old
-        ? { ...old, data: { ...old.data, items: old.data.items.map((item) => (item.id === id ? { ...item, status: next } : item)) } }
-        : old
-    );
+  function refreshBookings() {
+    void queryClient.invalidateQueries({ queryKey: ["admin-bookings"] });
+    void queryClient.invalidateQueries({ queryKey: ["admin-overview"] });
+    void queryClient.invalidateQueries({ queryKey: ["admin-payments"] });
   }
-
   async function cancel(booking: AdminBooking) {
     if (!window.confirm("Cancel this booking?")) {
       return;
@@ -68,7 +57,7 @@ export function BookingsScreen() {
       setNotice(err instanceof Error ? err.message : "Unable to cancel booking");
       return;
     }
-    patchStatus(booking.id, "cancelled");
+    refreshBookings();
   }
 
   async function refund(booking: AdminBooking) {
@@ -82,15 +71,15 @@ export function BookingsScreen() {
       setNotice(err instanceof Error ? err.message : "Unable to issue refund");
       return;
     }
-    patchStatus(booking.id, "cancelled");
+    refreshBookings();
   }
 
-  const isMock = Boolean(query.data?.isMock);
+
 
   return (
     <div className="page-frame page-frame-fill">
       <ActionBanner message={notice} onDismiss={() => setNotice(null)} />
-      {isMock ? <DemoDataBanner context="booking" /> : null}
+
       <FilterBar>
         <select
           value={status}
@@ -134,13 +123,13 @@ export function BookingsScreen() {
               ),
           },
         ]}
-        rows={query.data?.data.items ?? []}
+        rows={query.data?.items ?? []}
         rowKey={(booking) => booking.id}
         loading={query.isLoading}
         error={query.error instanceof Error ? query.error.message : query.error ? "Unable to load bookings" : null}
         emptyTitle="No bookings yet"
         emptyHint="Seat bookings will appear in this table as passengers confirm rides."
-        footer={<Pagination page={page} total={query.data?.data.total ?? 0} limit={20} onPageChange={setPage} />}
+        footer={<Pagination page={page} total={query.data?.total ?? 0} limit={20} onPageChange={setPage} />}
       />
     </div>
   );

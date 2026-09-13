@@ -1,3 +1,4 @@
+import { useQueryClient } from "@tanstack/react-query";
 import type { CSSProperties, ReactNode } from "react";
 
 export interface DataColumn<T> {
@@ -28,6 +29,7 @@ export function DataTable<T>({
   emptyHint?: string;
   footer?: ReactNode;
 }) {
+  const queryClient = useQueryClient();
   const colCount = columns.length;
   const showEmpty = !loading && !error && rows.length === 0;
   const skeletonCount = 6;
@@ -66,6 +68,7 @@ export function DataTable<T>({
               <tr>
                 <td colSpan={colCount} className="data-table-empty-cell">
                   <EmptyPanel title="Couldn’t load this table" hint={error} tone="error" />
+                  <button type="button" className="table-action" onClick={() => void queryClient.refetchQueries({ type: "active" })}>Retry</button>
                 </td>
               </tr>
             ) : null}

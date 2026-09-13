@@ -15,7 +15,7 @@ Notifications.setNotificationHandler({
   }),
 });
 
-export async function registerFcmToken(): Promise<string | null> {
+async function registerToken(): Promise<string | null> {
   if (!Device.isDevice) {
     return null;
   }
@@ -51,4 +51,14 @@ export async function registerFcmToken(): Promise<string | null> {
     }).catch(() => undefined);
   }
   return token.data;
+}
+
+// Push setup can fail independently of the app (permissions, Firebase, network).
+export async function registerFcmToken(): Promise<string | null> {
+  try {
+    return await registerToken();
+  } catch (error) {
+    console.warn("Push registration is unavailable", error);
+    return null;
+  }
 }

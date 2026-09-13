@@ -7,6 +7,13 @@ export const serviceUrls = {
   payment: import.meta.env.VITE_PAYMENT_SERVICE_URL ?? "http://localhost:3003",
 };
 
+export class ApiError extends Error {
+  constructor(message: string, public readonly status?: number) {
+    super(message);
+    this.name = "ApiError";
+  }
+}
+
 export const api = axios.create({ timeout: 15000 });
 
 api.interceptors.request.use(async (config) => {
@@ -22,7 +29,7 @@ api.interceptors.response.use(
   (response) => response,
   (error: AxiosError<{ message?: string }>) => {
     const message = error.response?.data?.message ?? error.message ?? "Request failed";
-    return Promise.reject(new Error(message));
+    return Promise.reject(new ApiError(message, error.response?.status));
   }
 );
 

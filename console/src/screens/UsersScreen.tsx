@@ -8,8 +8,6 @@ import { DataTable } from "../components/DataTable";
 import { FilterBar } from "../components/FilterBar";
 import { ActionBanner } from "../components/ActionBanner";
 import { ActionMenu } from "../components/ActionMenu";
-import { DemoDataBanner } from "../components/DemoDataBanner";
-import { liveOrMock, LiveOrMock, MOCK_USERS, paginate } from "../lib/mockData";
 
 interface AdminUser {
   id: string;
@@ -35,23 +33,12 @@ export function UsersScreen() {
 
   const query = useQuery({
     queryKey: ["admin-users", page, search, role],
-    queryFn: () => {
-      const needle = search.trim().toLowerCase();
-      const filtered = MOCK_USERS.filter(
-        (user) =>
-          (!needle || (user.name ?? "").toLowerCase().includes(needle) || user.phone.toLowerCase().includes(needle)) &&
-          (!role || user.role === role)
-      );
-      return liveOrMock(
-        () =>
-          bookingGet<{ items: AdminUser[]; total: number }>(
-            `/admin/users?page=${page}&limit=20${search ? `&search=${encodeURIComponent(search)}` : ""}${
-              role ? `&role=${role}` : ""
-            }`
-          ),
-        paginate(filtered, page, 20)
-      );
-    },
+    queryFn: () =>
+      bookingGet<{ items: AdminUser[]; total: number }>(
+        `/admin/users?page=${page}&limit=20${search ? `&search=${encodeURIComponent(search)}` : ""}${
+          role ? `&role=${role}` : ""
+        }`
+      ),
   });
 
   async function toggleAdmin(user: AdminUser) {
@@ -62,15 +49,9 @@ export function UsersScreen() {
       setNotice(err instanceof Error ? err.message : "Unable to update admin flag");
       return;
     }
-    queryClient.setQueryData<LiveOrMock<{ items: AdminUser[]; total: number }>>(["admin-users", page, search, role], (old) =>
+    queryClient.setQueryData<{ items: AdminUser[]; total: number }>(["admin-users", page, search, role], (old) =>
       old
-        ? {
-            ...old,
-            data: {
-              ...old.data,
-              items: old.data.items.map((item) => (item.id === user.id ? { ...item, is_admin: !item.is_admin } : item)),
-            },
-          }
+        ? { ...old, items: old.items.map((item) => (item.id === user.id ? { ...item, is_admin: !item.is_admin } : item)) }
         : old
     );
   }
@@ -83,15 +64,9 @@ export function UsersScreen() {
       setNotice(err instanceof Error ? err.message : "Unable to update account status");
       return;
     }
-    queryClient.setQueryData<LiveOrMock<{ items: AdminUser[]; total: number }>>(["admin-users", page, search, role], (old) =>
+    queryClient.setQueryData<{ items: AdminUser[]; total: number }>(["admin-users", page, search, role], (old) =>
       old
-        ? {
-            ...old,
-            data: {
-              ...old.data,
-              items: old.data.items.map((item) => (item.id === user.id ? { ...item, is_active: !item.is_active } : item)),
-            },
-          }
+        ? { ...old, items: old.items.map((item) => (item.id === user.id ? { ...item, is_active: !item.is_active } : item)) }
         : old
     );
   }
@@ -110,12 +85,9 @@ export function UsersScreen() {
     }
   }
 
-  const isMock = Boolean(query.data?.isMock);
-
   return (
     <div className="page-frame page-frame-fill">
       <ActionBanner message={notice} onDismiss={() => setNotice(null)} />
-      {isMock ? <DemoDataBanner context="user" /> : null}
       <FilterBar>
         <input
           value={search}
@@ -184,13 +156,13 @@ export function UsersScreen() {
             ),
           },
         ]}
-        rows={query.data?.data.items ?? []}
+        rows={query.data?.items ?? []}
         rowKey={(user) => user.id}
         loading={query.isLoading}
         error={query.error instanceof Error ? query.error.message : query.error ? "Unable to load users" : null}
         emptyTitle="No users yet"
         emptyHint="The user table is ready. New sign-ups will show up here automatically."
-        footer={<Pagination page={page} total={query.data?.data.total ?? 0} limit={20} onPageChange={setPage} />}
+        footer={<Pagination page={page} total={query.data?.total ?? 0} limit={20} onPageChange={setPage} />}
       />
     </div>
   );

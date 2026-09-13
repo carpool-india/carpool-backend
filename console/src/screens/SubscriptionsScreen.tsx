@@ -8,7 +8,7 @@ import { FilterBar } from "../components/FilterBar";
 import { ActionBanner } from "../components/ActionBanner";
 import { ActionMenu } from "../components/ActionMenu";
 import { DemoDataBanner } from "../components/DemoDataBanner";
-import { liveOrMock, LiveOrMock, MOCK_SUBSCRIPTIONS, paginate } from "../lib/mockData";
+import { liveOrMock, MOCK_SUBSCRIPTIONS, paginate } from "../lib/mockData";
 
 interface AdminSubscription {
   id: string;
@@ -64,19 +64,8 @@ export function SubscriptionsScreen() {
       setNotice(err instanceof Error ? err.message : "Unable to cancel plan");
       return;
     }
-    queryClient.setQueryData<LiveOrMock<{ items: AdminSubscription[]; total: number }>>(
-      ["admin-subscriptions", page, planType, status],
-      (old) =>
-        old
-          ? {
-              ...old,
-              data: {
-                ...old.data,
-                items: old.data.items.map((item) => (item.id === sub.id ? { ...item, status: "cancelled" } : item)),
-              },
-            }
-          : old
-    );
+    await queryClient.invalidateQueries({ queryKey: ["admin-subscriptions"] });
+    void queryClient.invalidateQueries({ queryKey: ["admin-revenue"] });
   }
 
   const isMock = Boolean(query.data?.isMock);
@@ -109,6 +98,7 @@ export function SubscriptionsScreen() {
           <option value="active">Active</option>
           <option value="pending">Pending</option>
           <option value="expired">Expired</option>
+          <option value="cancelled">Cancelled</option>
         </select>
       </FilterBar>
       <DataTable

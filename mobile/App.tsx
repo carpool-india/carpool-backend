@@ -34,7 +34,7 @@ export function App() {
                 if (response) {
                   navigateFromNotification(response.notification.request.content.data as Record<string, string>);
                 }
-              });
+              }).catch((error) => console.warn("Unable to read the launch notification", error));
             }}
           >
             <RootNavigator />

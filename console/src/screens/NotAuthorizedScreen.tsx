@@ -1,16 +1,16 @@
 import { useAuth } from "../store/AuthContext";
 
 export function NotAuthorizedScreen() {
-  const { signOut, recheckAdmin } = useAuth();
+  const { signOut, recheckAdmin, status } = useAuth();
 
   return (
     <div className="login-screen flex-col gap-4 text-center">
       <div className="max-w-sm rounded-xl bg-white p-7 text-left shadow-lg">
-        <h1 className="text-[15px] font-semibold tracking-tight text-slate-900">Not an admin yet</h1>
+        <h1 className="text-[15px] font-semibold tracking-tight text-slate-900">{status === "unavailable" ? "Unable to check access" : "Admin access required"}</h1>
         <p className="mt-2 text-[13px] leading-5 text-slate-500">
-          You're signed in, but this account doesn't have admin access. Ask an existing admin to set
-          your <code className="rounded bg-slate-100 px-1.5 py-0.5 text-xs">is_admin</code> flag, then
-          try again.
+          {status === "unavailable"
+            ? "The admin service is temporarily unavailable. Check your connection and try again."
+            : "This account does not have admin access. Contact an existing administrator, then try again."}
         </p>
         <div className="mt-5 flex gap-2">
           <button

@@ -28,7 +28,7 @@ export function App() {
       </div>
     );
   }
-  if (status === "not-authorized") {
+  if (status === "not-authorized" || status === "unavailable") {
     return <NotAuthorizedScreen />;
   }
 

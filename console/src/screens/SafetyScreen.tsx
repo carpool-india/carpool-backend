@@ -86,6 +86,7 @@ export function SafetyScreen() {
           : old
     );
     void queryClient.invalidateQueries({ queryKey: ["admin-sos-unresolved"] });
+    void queryClient.invalidateQueries({ queryKey: ["admin-safety-events"] });
     setSelected(null);
   }
 
@@ -162,7 +163,7 @@ export function SafetyScreen() {
           {
             header: "Location",
             render: (event) =>
-              event.lat && event.lng ? (
+              event.lat != null && event.lng != null ? (
                 <a className="text-brand underline" target="_blank" rel="noreferrer" href={`https://maps.google.com/?q=${event.lat},${event.lng}`}>
                   Open map
                 </a>
@@ -218,7 +219,7 @@ export function SafetyScreen() {
               <Badge label={selected.resolved ? "resolved" : "open"} tone={selected.resolved ? "good" : "critical"} />
               <span>{new Date(selected.created_at).toLocaleString("en-IN")}</span>
             </div>
-            {selected.lat && selected.lng ? (
+            {selected.lat != null && selected.lng != null ? (
               <div className="event-map">
                 <iframe
                   title="Event location"
@@ -242,7 +243,12 @@ export function SafetyScreen() {
             ) : null}
             <h3 className="section-label">Emergency contacts</h3>
             {isContactsMock ? <DemoDataBanner context="emergency contact" /> : null}
-            {contacts.data?.data.items.length ? (
+            {contacts.isLoading ? <p className="muted">Loading emergency contacts...</p> : contacts.isError ? (
+              <div role="alert">
+                <p>Emergency contacts could not be loaded.</p>
+                <button type="button" className="table-action" onClick={() => void contacts.refetch()}>Retry contacts</button>
+              </div>
+            ) : contacts.data?.data.items.length ? (
               <ul className="contact-list">
                 {contacts.data.data.items.map((contact) => (
                   <li key={contact.id}>

@@ -154,6 +154,8 @@ export function KycScreen() {
     queryClient.setQueryData<LiveOrMock<KycUserGroup | null>>(["admin-kyc-detail-user", selectedUserId], (old) =>
       old && old.data ? { ...old, data: { ...old.data, documents: old.data.documents.map(patchDoc) } } : old
     );
+    void queryClient.invalidateQueries({ queryKey: ["admin-kyc"] });
+    void queryClient.invalidateQueries({ queryKey: ["admin-overview"] });
     setSavingId(null);
   }
 
@@ -257,6 +259,19 @@ export function KycScreen() {
         footer={<Pagination page={page} total={query.data?.data.total ?? 0} limit={20} onPageChange={setPage} />}
       />
 
+      {selectedUserId && !activeGroup ? (
+        <div className="drawer-backdrop" onClick={closeReview} role="presentation">
+          <aside className="drawer-panel" onClick={(event) => event.stopPropagation()} aria-label="Document review">
+            <button type="button" className="admin-signout" onClick={closeReview}>Close</button>
+            {detail.isError ? (
+              <div role="alert">
+                <p>Document review could not be loaded.</p>
+                <button type="button" className="table-action" onClick={() => void detail.refetch()}>Retry review</button>
+              </div>
+            ) : <p>Loading documents...</p>}
+          </aside>
+        </div>
+      ) : null}
       {selectedUserId && activeGroup ? (
         <div className="drawer-backdrop" onClick={closeReview} role="presentation">
           <aside className="drawer-panel" onClick={(event) => event.stopPropagation()} aria-label="Document review">

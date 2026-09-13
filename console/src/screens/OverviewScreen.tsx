@@ -4,8 +4,6 @@ import { bookingGet, paymentGet, safetyGet } from "../lib/api";
 import { StatTile } from "../components/StatTile";
 import { DataTable } from "../components/DataTable";
 import { Badge } from "../components/Badge";
-import { DemoDataBanner } from "../components/DemoDataBanner";
-import { liveOrMock, MOCK_OPEN_SOS, MOCK_OVERVIEW, MOCK_REVENUE } from "../lib/mockData";
 
 interface Overview {
   totalUsers: number;
@@ -35,31 +33,31 @@ function inr(value: number): string {
 export function OverviewScreen() {
   const overview = useQuery({
     queryKey: ["admin-overview"],
-    queryFn: () => liveOrMock(() => bookingGet<Overview>("/admin/overview"), MOCK_OVERVIEW),
+    queryFn: () => bookingGet<Overview>("/admin/overview"),
   });
   const revenue = useQuery({
     queryKey: ["admin-revenue"],
-    queryFn: () => liveOrMock(() => paymentGet<RevenueSummary>("/admin/revenue-summary"), MOCK_REVENUE),
+    queryFn: () => paymentGet<RevenueSummary>("/admin/revenue-summary"),
   });
   const unresolvedSos = useQuery({
     queryKey: ["admin-sos-unresolved"],
     queryFn: () =>
-      liveOrMock(
-        () =>
-          safetyGet<{ items: SafetyEvent[]; total: number }>("/admin/safety-events?eventType=sos&resolved=false&limit=5"),
-        { items: MOCK_OPEN_SOS, total: MOCK_OPEN_SOS.length }
-      ),
+      safetyGet<{ items: SafetyEvent[]; total: number }>("/admin/safety-events?eventType=sos&resolved=false&limit=5"),
     refetchInterval: 15000,
   });
 
-  const overviewData = overview.data?.data;
-  const revenueData = revenue.data?.data;
-  const sosData = unresolvedSos.data?.data;
-  const showOverviewBanner = Boolean(overview.data?.isMock || revenue.data?.isMock);
+  const overviewData = overview.data;
+  const revenueData = revenue.data;
+  const sosData = unresolvedSos.data;
 
   return (
     <div className="page-frame">
-      {showOverviewBanner ? <DemoDataBanner context="overview" /> : null}
+      {overview.isError || revenue.isError || unresolvedSos.isError ? (
+        <div role="alert" className="action-banner">
+          <span>Some dashboard data is unavailable. {overview.isError ? "User and trip totals could not load. " : ""}{revenue.isError ? "Revenue could not load. " : ""}{unresolvedSos.isError ? "SOS monitoring is unavailable." : ""}</span>
+          <button type="button" className="table-action" onClick={() => { void overview.refetch(); void revenue.refetch(); void unresolvedSos.refetch(); }}>Retry</button>
+        </div>
+      ) : null}
       {sosData && sosData.total > 0 ? (
         <Link to="/safety" className="sos-banner">
           <span className="sos-banner-copy">
@@ -98,7 +96,6 @@ export function OverviewScreen() {
       </div>
 
       <h2 className="section-label">Open SOS</h2>
-      {unresolvedSos.data?.isMock ? <DemoDataBanner context="SOS" /> : null}
       <DataTable
         columns={[
           { header: "Type", render: (event) => event.event_type.replace(/_/g, " ") },

@@ -8,7 +8,7 @@ import { FilterBar } from "../components/FilterBar";
 import { ActionBanner } from "../components/ActionBanner";
 import { ActionMenu } from "../components/ActionMenu";
 import { DemoDataBanner } from "../components/DemoDataBanner";
-import { liveOrMock, LiveOrMock, MOCK_TRIPS, paginate } from "../lib/mockData";
+import { liveOrMock, MOCK_TRIPS, paginate } from "../lib/mockData";
 
 interface AdminTrip {
   id: string;
@@ -66,17 +66,9 @@ export function TripsScreen() {
       setNotice(err instanceof Error ? err.message : "Unable to cancel trip");
       return;
     }
-    queryClient.setQueryData<LiveOrMock<{ items: AdminTrip[]; total: number }>>(["admin-trips", page, status, tripType], (old) =>
-      old
-        ? {
-            ...old,
-            data: {
-              ...old.data,
-              items: old.data.items.map((item) => (item.id === trip.id ? { ...item, status: "cancelled" } : item)),
-            },
-          }
-        : old
-    );
+    await queryClient.invalidateQueries({ queryKey: ["admin-trips"] });
+    void queryClient.invalidateQueries({ queryKey: ["admin-overview"] });
+    void queryClient.invalidateQueries({ queryKey: ["admin-bookings"] });
   }
 
   const isMock = Boolean(query.data?.isMock);

@@ -8,7 +8,7 @@ import { FilterBar } from "../components/FilterBar";
 import { ActionBanner } from "../components/ActionBanner";
 import { ActionMenu } from "../components/ActionMenu";
 import { DemoDataBanner } from "../components/DemoDataBanner";
-import { liveOrMock, LiveOrMock, MOCK_VEHICLES, paginate } from "../lib/mockData";
+import { liveOrMock, MOCK_VEHICLES, paginate } from "../lib/mockData";
 
 interface AdminVehicle {
   id: string;
@@ -59,17 +59,7 @@ export function VehiclesScreen() {
       setNotice(err instanceof Error ? err.message : "Unable to update vehicle");
       return;
     }
-    queryClient.setQueryData<LiveOrMock<{ items: AdminVehicle[]; total: number }>>(["admin-vehicles", page, verified], (old) =>
-      old
-        ? {
-            ...old,
-            data: {
-              ...old.data,
-              items: old.data.items.map((item) => (item.id === vehicle.id ? { ...item, is_verified: isVerified } : item)),
-            },
-          }
-        : old
-    );
+    await queryClient.invalidateQueries({ queryKey: ["admin-vehicles"] });
   }
 
   const isMock = Boolean(query.data?.isMock);

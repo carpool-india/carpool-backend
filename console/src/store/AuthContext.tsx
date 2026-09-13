@@ -1,9 +1,9 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 import type { Session } from "@supabase/supabase-js";
 import { supabase } from "../lib/supabase";
-import { bookingGet } from "../lib/api";
+import { ApiError, bookingGet } from "../lib/api";
 
-type AdminStatus = "checking" | "authorized" | "not-authorized";
+type AdminStatus = "checking" | "authorized" | "not-authorized" | "unavailable";
 
 interface AuthContextValue {
   session: Session | null;
@@ -20,11 +20,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loaded, setLoaded] = useState(false);
 
   async function checkAdmin() {
+    setStatus("checking");
     try {
       await bookingGet("/admin/overview");
       setStatus("authorized");
-    } catch {
-      setStatus("not-authorized");
+    } catch (error) {
+      setStatus(error instanceof ApiError && (error.status === 401 || error.status === 403) ? "not-authorized" : "unavailable");
     }
   }
 
