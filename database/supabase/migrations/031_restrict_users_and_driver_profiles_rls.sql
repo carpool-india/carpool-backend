@@ -30,16 +30,27 @@ DROP POLICY IF EXISTS driver_profiles_select ON driver_profiles;
 -- driver_profiles_write_own (FOR ALL, self-scoped) already covers SELECT for a
 -- driver's own row, so no replacement self-scoped SELECT policy is needed here.
 
+-- Supabase applies its own default privileges to `anon`/`authenticated` on
+-- every new relation in `public` (separate from, and not covered by, a plain
+-- REVOKE ... FROM PUBLIC) -- a fresh view here starts out with far more than
+-- SELECT granted, including INSERT/UPDATE/DELETE. Since these are simple
+-- single-table projections, Postgres treats them as auto-updatable views, so
+-- those extra grants would let a write through the view reach the real
+-- `users`/`driver_profiles` row, bypassing RLS the same way SELECT does here
+-- on purpose. Revoke everything from both roles before granting back only
+-- the narrow SELECT this migration actually intends.
 CREATE VIEW public.user_public_profiles AS
 SELECT id, name, photo_url, gender, trust_score, aadhaar_verified, dl_verified, face_match_done
 FROM public.users;
 
+REVOKE ALL ON public.user_public_profiles FROM PUBLIC, anon, authenticated;
 GRANT SELECT ON public.user_public_profiles TO authenticated;
 
 CREATE VIEW public.driver_public_profiles AS
 SELECT id, user_id, years_of_experience, total_trips, cancellation_count, reliability_score, created_at
 FROM public.driver_profiles;
 
+REVOKE ALL ON public.driver_public_profiles FROM PUBLIC, anon, authenticated;
 GRANT SELECT ON public.driver_public_profiles TO authenticated;
 
 -- get_trust_score_breakdown(p_user_id) is explicitly designed to let one user
@@ -51,8 +62,12 @@ GRANT SELECT ON public.driver_public_profiles TO authenticated;
 -- caller wasn't a party to them. SECURITY DEFINER fixes both: RLS-independent
 -- (works now that users/driver_profiles are locked down) and accurate (counts
 -- every relevant row, not just ones the caller could already see).
+-- As with the views above, Supabase grants EXECUTE to `anon`/`authenticated`
+-- directly (independent of PUBLIC) on every new/replaced function in
+-- `public`, so both roles must be named explicitly in the REVOKE, not just
+-- PUBLIC, or `anon` keeps the ability to call this unauthenticated.
 ALTER FUNCTION public.get_trust_score_breakdown(UUID) SECURITY DEFINER SET search_path = public;
-REVOKE ALL ON FUNCTION public.get_trust_score_breakdown(UUID) FROM PUBLIC;
+REVOKE ALL ON FUNCTION public.get_trust_score_breakdown(UUID) FROM PUBLIC, anon, authenticated;
 GRANT EXECUTE ON FUNCTION public.get_trust_score_breakdown(UUID) TO authenticated;
 
 -- Separately: rating.service.ts's submitRating calls recalculateTrustScore(client,
@@ -95,5 +110,5 @@ BEGIN
 END;
 $$;
 
-REVOKE ALL ON FUNCTION public.recalculate_and_store_trust_score(UUID) FROM PUBLIC;
+REVOKE ALL ON FUNCTION public.recalculate_and_store_trust_score(UUID) FROM PUBLIC, anon, authenticated;
 GRANT EXECUTE ON FUNCTION public.recalculate_and_store_trust_score(UUID) TO authenticated;
