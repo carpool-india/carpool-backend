@@ -1,6 +1,13 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { CreateTripInput, Trip, TripStatus, TripType, UpdateTripInput } from "@rideshare/types";
-import { geocodeIndianCity, parseGeoPoint, toGeoJsonPoint } from "@rideshare/utils";
+import {
+  describeOverchargeError,
+  describeTripTypeMismatch,
+  geocodeIndianCity,
+  haversineKm,
+  parseGeoPoint,
+  toGeoJsonPoint,
+} from "@rideshare/utils";
 import { badRequest, forbidden, notFound } from "../lib/errors";
 import { resolveRoutePolyline } from "./directions.service";
 import { reverseGeocodeState } from "./geo.service";
@@ -124,6 +131,21 @@ export async function createTrip(
   }
 
   const tripType = input.tripType ?? "intracity";
+  const distanceKm = haversineKm(
+    input.originPoint.lat,
+    input.originPoint.lng,
+    input.destinationPoint.lat,
+    input.destinationPoint.lng
+  );
+  const typeMismatch = describeTripTypeMismatch(distanceKm, tripType);
+  if (typeMismatch) {
+    throw badRequest(typeMismatch);
+  }
+  const overcharge = describeOverchargeError(input.pricePerSeat, distanceKm, tripType);
+  if (overcharge) {
+    throw badRequest(overcharge);
+  }
+
   const requiredPlan = tripType === "intercity" ? "driver_outstation" : "driver_local";
   const hasPlan = await hasActiveSubscription(client, driverId, [requiredPlan]);
   if (!hasPlan) {
@@ -272,6 +294,25 @@ export async function updateTrip(
   }
   if (existing.status === "completed" || existing.status === "cancelled") {
     throw badRequest("Completed or cancelled trips cannot be edited");
+  }
+
+  if (input.tripType !== undefined || input.pricePerSeat !== undefined) {
+    const effectiveTripType = input.tripType ?? existing.tripType;
+    const effectivePrice = input.pricePerSeat ?? existing.pricePerSeat;
+    const distanceKm = haversineKm(
+      existing.originPoint.lat,
+      existing.originPoint.lng,
+      existing.destinationPoint.lat,
+      existing.destinationPoint.lng
+    );
+    const typeMismatch = describeTripTypeMismatch(distanceKm, effectiveTripType);
+    if (typeMismatch) {
+      throw badRequest(typeMismatch);
+    }
+    const overcharge = describeOverchargeError(effectivePrice, distanceKm, effectiveTripType);
+    if (overcharge) {
+      throw badRequest(overcharge);
+    }
   }
 
   const { data, error } = await client

@@ -3,7 +3,13 @@ import { Platform, Pressable, Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useFocusEffect } from "@react-navigation/native";
 import DateTimePicker, { type DateTimePickerEvent } from "@react-native-community/datetimepicker";
-import { haversineKm, suggestPricePerSeat, vehicleNumberSchema } from "@rideshare/utils";
+import {
+  describeOverchargeError,
+  describeTripTypeMismatch,
+  haversineKm,
+  suggestPricePerSeat,
+  vehicleNumberSchema,
+} from "@rideshare/utils";
 import type { Subscription, TripType, VehicleType } from "@rideshare/types";
 import { bookingPost, paymentGet } from "../../services/api";
 import { navigateRoot } from "../../navigation/navigateRoot";
@@ -121,11 +127,18 @@ export function PostTripScreen({ navigation }: TabScreenProps<"PublishTab">) {
     distanceKm = haversineKm(originPlace.lat, originPlace.lng, destinationPlace.lat, destinationPlace.lng);
     suggestedPrice = suggestPricePerSeat(distanceKm, tripType);
   }
+  const tripTypeError = distanceKm !== null ? describeTripTypeMismatch(distanceKm, tripType) : null;
+  const overchargeError =
+    distanceKm !== null && price ? describeOverchargeError(Number(price), distanceKm, tripType) : null;
 
   function validateStep(current: number): boolean {
     if (current === 0) {
       if (!originPlace || !destinationPlace) {
         setError(t(language, "selectBothPlaces"));
+        return false;
+      }
+      if (tripTypeError) {
+        setError(tripTypeError);
         return false;
       }
     } else if (current === 1) {
@@ -141,6 +154,10 @@ export function PostTripScreen({ navigation }: TabScreenProps<"PublishTab">) {
       }
       if (!seats || Number(seats) <= 0) {
         setError(t(language, "enterSeatsCount"));
+        return false;
+      }
+      if (overchargeError) {
+        setError(overchargeError);
         return false;
       }
     }
@@ -254,6 +271,12 @@ export function PostTripScreen({ navigation }: TabScreenProps<"PublishTab">) {
                 language={language}
                 onSelect={setDestinationPlace}
               />
+              {tripTypeError ? (
+                <View className="mt-2 flex-row rounded-2xl bg-amber-50 p-3">
+                  <Ionicons name="alert-circle" size={18} color="#D97706" />
+                  <Text className="ml-2 flex-1 text-sm text-amber-800">{tripTypeError}</Text>
+                </View>
+              ) : null}
             </>
           ) : null}
 
@@ -397,6 +420,12 @@ export function PostTripScreen({ navigation }: TabScreenProps<"PublishTab">) {
                   <Text className="text-xs font-extrabold text-brand">{t(language, "usePrice")}</Text>
                 </Pressable>
               ) : null}
+              {overchargeError ? (
+                <View className="mb-1 flex-row rounded-2xl bg-amber-50 p-3">
+                  <Ionicons name="alert-circle" size={18} color="#D97706" />
+                  <Text className="ml-2 flex-1 text-sm text-amber-800">{overchargeError}</Text>
+                </View>
+              ) : null}
               <Pressable
                 onPress={() => setWomenOnly((value) => !value)}
                 className={`mt-1 flex-row items-center rounded-2xl px-3 py-3.5 ${womenOnly ? "bg-pink-50" : "bg-[#F7FAF9]"}`}
@@ -470,7 +499,7 @@ export function PostTripScreen({ navigation }: TabScreenProps<"PublishTab">) {
               <PrimaryButton label={t(language, "next")} onPress={goNext} />
             ) : (
               <PrimaryButton
-                disabled={!canDrive || !hasActivePlan}
+                disabled={!canDrive || !hasActivePlan || Boolean(tripTypeError) || Boolean(overchargeError)}
                 label={t(language, "postRide")}
                 onPress={() => void submit()}
               />

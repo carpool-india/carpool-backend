@@ -1,7 +1,13 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import type { Subscription, TripType, VehicleType } from "@rideshare/types";
-import { haversineKm, suggestPricePerSeat, vehicleNumberSchema } from "@rideshare/utils";
+import {
+  describeOverchargeError,
+  describeTripTypeMismatch,
+  haversineKm,
+  suggestPricePerSeat,
+  vehicleNumberSchema,
+} from "@rideshare/utils";
 import { bookingPost, paymentGet } from "../services/api";
 import { PlaceInput } from "../components/PlaceInput";
 import { useAuthStore } from "../store/authStore";
@@ -84,10 +90,17 @@ export function PostTripPage() {
     distanceKm = haversineKm(origin.lat, origin.lng, destination.lat, destination.lng);
     suggestedPrice = suggestPricePerSeat(distanceKm, tripType);
   }
+  const tripTypeError = distanceKm !== null ? describeTripTypeMismatch(distanceKm, tripType) : null;
+  const overchargeError =
+    distanceKm !== null && price ? describeOverchargeError(Number(price), distanceKm, tripType) : null;
 
   async function submit() {
     if (!origin || !destination) {
       setError("Choose both a from and to location");
+      return;
+    }
+    if (tripTypeError) {
+      setError(tripTypeError);
       return;
     }
     const parsedVehicleNumber = vehicleNumberSchema.safeParse(selectedVehicle.number);
@@ -101,6 +114,10 @@ export function PostTripPage() {
     }
     if (!seats || Number(seats) <= 0) {
       setError("Enter the number of seats");
+      return;
+    }
+    if (overchargeError) {
+      setError(overchargeError);
       return;
     }
     setSubmitting(true);
@@ -159,6 +176,11 @@ export function PostTripPage() {
           <PlaceInput label="From" placeholder="Leaving from" place={origin} onSelect={setOrigin} />
           <PlaceInput label="To" placeholder="Going to" place={destination} onSelect={setDestination} />
         </div>
+        {tripTypeError ? (
+          <div className="mt-3">
+            <Alert>{tripTypeError}</Alert>
+          </div>
+        ) : null}
 
         <label className="mt-5 block">
           <span className="text-[10px] font-bold uppercase tracking-[0.14em] text-ink-faint">Departure</span>
@@ -225,6 +247,11 @@ export function PostTripPage() {
             <span className="text-xs font-extrabold text-brand-dark">Use price</span>
           </button>
         ) : null}
+        {overchargeError ? (
+          <div className="mt-3">
+            <Alert>{overchargeError}</Alert>
+          </div>
+        ) : null}
 
         <div className="mt-4 space-y-2">
           <Toggle checked={womenOnly} onChange={setWomenOnly} label="Women only" />
@@ -242,7 +269,7 @@ export function PostTripPage() {
       <PrimaryButton
         type="button"
         onClick={() => void submit()}
-        disabled={submitting || !canDrive || !hasActivePlan}
+        disabled={submitting || !canDrive || !hasActivePlan || Boolean(tripTypeError) || Boolean(overchargeError)}
         className="mt-6 w-full"
       >
         {submitting ? "Posting…" : "Post ride"}
