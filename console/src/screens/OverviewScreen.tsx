@@ -47,8 +47,7 @@ export function OverviewScreen() {
       liveOrMock(
         () =>
           safetyGet<{ items: SafetyEvent[]; total: number }>("/admin/safety-events?eventType=sos&resolved=false&limit=5"),
-        { items: MOCK_OPEN_SOS, total: MOCK_OPEN_SOS.length },
-        (data) => data.items.length === 0
+        { items: MOCK_OPEN_SOS, total: MOCK_OPEN_SOS.length }
       ),
     refetchInterval: 15000,
   });

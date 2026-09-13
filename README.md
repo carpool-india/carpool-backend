@@ -67,6 +67,8 @@ Mobile:
 npm run mobile
 ```
 
+EAS builds (`cd mobile && eas build --profile preview`) read `EXPO_PUBLIC_SUPABASE_URL`, `EXPO_PUBLIC_SUPABASE_ANON_KEY`, `EXPO_PUBLIC_GOOGLE_MAPS_API_KEY`, and `EXPO_PUBLIC_RAZORPAY_KEY_ID` via `$VAR` interpolation in `eas.json` — set them as EAS project environment variables (`eas env:create`) or export them in the invoking shell before building; they're intentionally not committed as literals.
+
 ## Tests
 
 ```bash

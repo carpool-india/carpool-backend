@@ -34,8 +34,7 @@ export function RatingsScreen() {
           safetyGet<{ items: AdminRating[]; total: number }>(
             `/admin/ratings?page=${page}&limit=20${maxStars ? `&maxStars=${maxStars}` : ""}`
           ),
-        paginate(filtered, page, 20),
-        (data) => data.items.length === 0
+        paginate(filtered, page, 20)
       );
     },
   });
@@ -49,6 +48,7 @@ export function RatingsScreen() {
       await safetyPatch(`/admin/ratings/${rating.id}/hide`, {});
     } catch (err) {
       setNotice(err instanceof Error ? err.message : "Unable to hide rating");
+      return;
     }
     queryClient.setQueryData<LiveOrMock<{ items: AdminRating[]; total: number }>>(["admin-ratings", page, maxStars], (old) =>
       old

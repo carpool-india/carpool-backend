@@ -46,8 +46,7 @@ export function VehiclesScreen() {
           bookingGet<{ items: AdminVehicle[]; total: number }>(
             `/admin/vehicles?page=${page}&limit=20${verified ? `&verified=${verified}` : ""}`
           ),
-        paginate(filtered, page, 20),
-        (data) => data.items.length === 0
+        paginate(filtered, page, 20)
       );
     },
   });
@@ -58,6 +57,7 @@ export function VehiclesScreen() {
       await bookingPatch(`/admin/vehicles/${vehicle.id}`, { isVerified });
     } catch (err) {
       setNotice(err instanceof Error ? err.message : "Unable to update vehicle");
+      return;
     }
     queryClient.setQueryData<LiveOrMock<{ items: AdminVehicle[]; total: number }>>(["admin-vehicles", page, verified], (old) =>
       old

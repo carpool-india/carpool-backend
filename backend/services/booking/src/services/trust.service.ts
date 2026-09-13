@@ -113,16 +113,26 @@ export async function listBlockedUsers(
   supabaseAuthId: string
 ): Promise<Array<{ id: string; name: string | null; photoUrl: string | null }>> {
   const blockerId = await resolveAppUserId(client, supabaseAuthId);
-  const { data, error } = await client
-    .from("user_blocks")
-    .select("blocked_id, users!user_blocks_blocked_id_fkey(id, name, photo_url)")
-    .eq("blocker_id", blockerId);
+  const { data, error } = await client.from("user_blocks").select("blocked_id").eq("blocker_id", blockerId);
   if (error) {
     throw badRequest(error.message);
   }
-  return (data ?? []).map((row: unknown) => {
-    const r = row as { blocked_id: string; users: { id: string; name: string | null; photo_url: string | null } | { id: string; name: string | null; photo_url: string | null }[] | null };
-    const u = Array.isArray(r.users) ? r.users[0] : r.users;
-    return { id: r.blocked_id, name: u?.name ?? null, photoUrl: u?.photo_url ?? null };
+  const blockedIds = (data ?? []).map((row) => row.blocked_id as string);
+  if (blockedIds.length === 0) {
+    return [];
+  }
+  const { data: profileRows } = await client
+    .from("user_public_profiles")
+    .select("id, name, photo_url")
+    .in("id", blockedIds);
+  const profiles = new Map(
+    ((profileRows ?? []) as Array<{ id: string; name: string | null; photo_url: string | null }>).map((row) => [
+      row.id,
+      row,
+    ])
+  );
+  return blockedIds.map((id) => {
+    const profile = profiles.get(id);
+    return { id, name: profile?.name ?? null, photoUrl: profile?.photo_url ?? null };
   });
 }

@@ -5,7 +5,7 @@ import { matchingPost } from "../services/api";
 import { SearchForm, toDateKey } from "../components/SearchForm";
 import { RideCard } from "../components/RideCard";
 import { Icon, icons } from "../components/Icon";
-import { Alert, Card, EmptyState, Page, PageHeader, PrimaryButton } from "../components/ui";
+import { Alert, Card, EmptyState, Page, PageHeader, PrimaryButton, Toggle } from "../components/ui";
 import { useAuthStore } from "../store/authStore";
 import { useTripStore, type SearchMatch } from "../store/tripStore";
 import type { MapPlace } from "../services/places";
@@ -59,6 +59,11 @@ export function SearchPage() {
   const [searching, setSearching] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [searched, setSearched] = useState(false);
+  const [tripType, setTripType] = useState<TripType | null>(null);
+  const [womenOnly, setWomenOnly] = useState(false);
+  const [instantBookOnly, setInstantBookOnly] = useState(false);
+  const [maxPrice, setMaxPrice] = useState("");
+  const [showFilters, setShowFilters] = useState(false);
 
   async function fetchMatches(searchDate: string, originPlace: MapPlace, destinationPlace: MapPlace): Promise<SearchMatch[]> {
     const payload = await matchingPost<MatchPayload>("/match", {
@@ -67,8 +72,11 @@ export function SearchPage() {
       date: searchDate,
       seats_needed: seats,
       passenger_gender: user?.gender,
+      trip_type: tripType ?? undefined,
+      instant_book_only: instantBookOnly || undefined,
+      max_price_per_seat: maxPrice ? Number(maxPrice) : undefined,
     });
-    return payload.matches.map((match) => ({
+    let results: SearchMatch[] = payload.matches.map((match) => ({
       id: match.trip_id,
       driverId: match.driver_id,
       originName: match.origin_name,
@@ -99,6 +107,10 @@ export function SearchPage() {
       detourKm: match.detour_km,
       score: match.score,
     }));
+    if (womenOnly) {
+      results = results.filter((item) => item.isWomenOnly);
+    }
+    return results;
   }
 
   async function search() {
@@ -172,6 +184,47 @@ export function SearchPage() {
           showPopular
           maxSeats={4}
         />
+        <div className="mt-4 flex flex-wrap items-center gap-2 border-t border-line pt-4">
+          {([null, "intracity", "intercity"] as const).map((option) => (
+            <button
+              key={option ?? "all"}
+              type="button"
+              onClick={() => setTripType(option)}
+              className={`rounded-full px-3.5 py-1.5 text-xs font-bold transition ${
+                tripType === option ? "bg-brand text-white" : "bg-paper text-ink-soft hover:text-brand"
+              }`}
+            >
+              {t(language, option === null ? "allTypes" : option)}
+            </button>
+          ))}
+          <button
+            type="button"
+            onClick={() => setShowFilters((value) => !value)}
+            className={`ml-auto flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-bold transition ${
+              showFilters || instantBookOnly || womenOnly || maxPrice ? "bg-brand-light text-brand-dark" : "bg-paper text-ink-soft hover:text-brand"
+            }`}
+          >
+            {t(language, "filters")}
+          </button>
+        </div>
+        {showFilters ? (
+          <div className="mt-3 space-y-2 rounded-2xl bg-paper p-4">
+            {user?.gender === "female" ? (
+              <Toggle checked={womenOnly} onChange={setWomenOnly} label={t(language, "womenOnlyFilter")} />
+            ) : null}
+            <Toggle checked={instantBookOnly} onChange={setInstantBookOnly} label={t(language, "instantBookFilter")} />
+            <label className="flex items-center justify-between gap-4 rounded-2xl bg-white px-4 py-3">
+              <span className="text-sm font-bold text-ink">{t(language, "maxPrice")}</span>
+              <input
+                type="number"
+                value={maxPrice}
+                onChange={(e) => setMaxPrice(e.target.value)}
+                placeholder="₹"
+                className="w-24 rounded-xl border border-line bg-white px-2.5 py-1.5 text-right text-sm text-ink outline-none focus:border-brand"
+              />
+            </label>
+          </div>
+        ) : null}
       </Card>
 
       {searched && !error ? (

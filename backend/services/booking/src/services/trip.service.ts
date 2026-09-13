@@ -233,7 +233,6 @@ interface TripBookingRow {
   status: string;
   total_amount: number;
   created_at: string;
-  users: { name: string | null; photo_url: string | null } | { name: string | null; photo_url: string | null }[] | null;
 }
 
 export async function listTripPassengers(
@@ -248,15 +247,29 @@ export async function listTripPassengers(
   }
   const { data, error } = await client
     .from("bookings")
-    .select("id, passenger_id, seats_booked, status, total_amount, created_at, users(name, photo_url)")
+    .select("id, passenger_id, seats_booked, status, total_amount, created_at")
     .eq("trip_id", tripId)
     .not("status", "in", "(cancelled,rejected)")
     .order("created_at", { ascending: true });
   if (error) {
     throw badRequest(error.message);
   }
-  return (data as unknown as TripBookingRow[]).map((row) => {
-    const passenger = Array.isArray(row.users) ? row.users[0] : row.users;
+  const rows = data as unknown as TripBookingRow[];
+  const { data: profileRows } = await client
+    .from("user_public_profiles")
+    .select("id, name, photo_url")
+    .in(
+      "id",
+      Array.from(new Set(rows.map((row) => row.passenger_id)))
+    );
+  const profiles = new Map(
+    ((profileRows ?? []) as Array<{ id: string; name: string | null; photo_url: string | null }>).map((row) => [
+      row.id,
+      row,
+    ])
+  );
+  return rows.map((row) => {
+    const passenger = profiles.get(row.passenger_id);
     return {
       bookingId: row.id,
       passengerId: row.passenger_id,

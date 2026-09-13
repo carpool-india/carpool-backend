@@ -49,8 +49,7 @@ export function UsersScreen() {
               role ? `&role=${role}` : ""
             }`
           ),
-        paginate(filtered, page, 20),
-        (data) => data.items.length === 0
+        paginate(filtered, page, 20)
       );
     },
   });
@@ -61,6 +60,7 @@ export function UsersScreen() {
       await bookingPatch(`/admin/users/${user.id}`, { isAdmin: !user.is_admin });
     } catch (err) {
       setNotice(err instanceof Error ? err.message : "Unable to update admin flag");
+      return;
     }
     queryClient.setQueryData<LiveOrMock<{ items: AdminUser[]; total: number }>>(["admin-users", page, search, role], (old) =>
       old
@@ -81,6 +81,7 @@ export function UsersScreen() {
       await bookingPatch(`/admin/users/${user.id}`, { isActive: !user.is_active });
     } catch (err) {
       setNotice(err instanceof Error ? err.message : "Unable to update account status");
+      return;
     }
     queryClient.setQueryData<LiveOrMock<{ items: AdminUser[]; total: number }>>(["admin-users", page, search, role], (old) =>
       old

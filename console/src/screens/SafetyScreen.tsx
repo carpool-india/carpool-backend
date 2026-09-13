@@ -58,8 +58,7 @@ export function SafetyScreen() {
               severity ? `&severity=${severity}` : ""
             }${resolvedFilter ? `&resolved=${resolvedFilter}` : ""}`
           ),
-        paginate(filtered, page, 20),
-        (data) => data.items.length === 0
+        paginate(filtered, page, 20)
       );
     },
     refetchInterval: 15000,
@@ -71,6 +70,7 @@ export function SafetyScreen() {
       await safetyPatch(`/admin/safety-events/${id}/resolve`, {});
     } catch (err) {
       setNotice(err instanceof Error ? err.message : "Unable to resolve event");
+      return;
     }
     queryClient.setQueryData<LiveOrMock<{ items: SafetyEvent[]; total: number }>>(
       ["admin-safety-events", page, eventType, severity, resolvedFilter],

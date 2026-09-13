@@ -44,8 +44,7 @@ export function BookingsScreen() {
           bookingGet<{ items: AdminBooking[]; total: number }>(
             `/admin/bookings?page=${page}&limit=20${status ? `&status=${status}` : ""}`
           ),
-        paginate(filtered, page, 20),
-        (data) => data.items.length === 0
+        paginate(filtered, page, 20)
       );
     },
   });
@@ -67,6 +66,7 @@ export function BookingsScreen() {
       await bookingPatch(`/admin/bookings/${booking.id}/cancel`, {});
     } catch (err) {
       setNotice(err instanceof Error ? err.message : "Unable to cancel booking");
+      return;
     }
     patchStatus(booking.id, "cancelled");
   }
@@ -80,6 +80,7 @@ export function BookingsScreen() {
       await paymentPost("/admin/refunds", { bookingId: booking.id, reason: "Admin refund" });
     } catch (err) {
       setNotice(err instanceof Error ? err.message : "Unable to issue refund");
+      return;
     }
     patchStatus(booking.id, "cancelled");
   }

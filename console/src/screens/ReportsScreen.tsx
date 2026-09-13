@@ -57,8 +57,7 @@ export function ReportsScreen() {
       if (status) params.set("status", status);
       return liveOrMock(
         () => bookingGet<{ items: UserReport[]; total: number }>(`/admin/reports?${params.toString()}`),
-        paginate(filtered, page, 20),
-        (data) => data.items.length === 0
+        paginate(filtered, page, 20)
       );
     },
   });
@@ -69,6 +68,7 @@ export function ReportsScreen() {
       await bookingPatch(`/admin/reports/${report.id}`, { status: next });
     } catch (err) {
       setNotice(err instanceof Error ? err.message : "Unable to update report");
+      return;
     }
     queryClient.setQueryData<LiveOrMock<{ items: UserReport[]; total: number }>>(listKey, (old) =>
       old

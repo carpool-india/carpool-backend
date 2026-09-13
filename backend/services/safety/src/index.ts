@@ -12,13 +12,18 @@ import { ratingRouter } from "./routes/rating.routes";
 import { sosRouter } from "./routes/sos.routes";
 import { adminRouter } from "./routes/admin.routes";
 
+// Validated eagerly so a misconfigured production deploy (e.g. missing
+// CORS_ORIGIN) fails at boot instead of serving requests.
+const startupEnv = loadEnv();
+
 const app = express();
 app.use(helmet());
-// CORS_ORIGIN unset -> permissive (current/dev behavior). Set it once the console's
-// domain is known to restrict browser access to just that origin; mobile isn't
-// subject to CORS so this never affects the app.
-const corsOrigin = process.env.CORS_ORIGIN;
-app.use(cors(corsOrigin ? { origin: corsOrigin.split(",").map((value) => value.trim()) } : undefined));
+// CORS_ORIGIN unset -> permissive (dev only; loadEnv() above refuses to boot
+// in production without it). Mobile isn't subject to CORS so this never
+// affects the app -- only the console/frontend's browser-side requests.
+app.use(
+  cors(startupEnv.CORS_ORIGIN ? { origin: startupEnv.CORS_ORIGIN.split(",").map((value) => value.trim()) } : undefined)
+);
 app.use(express.json({ limit: "1mb" }));
 
 app.get("/health", (_req, res) => {

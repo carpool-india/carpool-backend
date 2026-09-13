@@ -48,8 +48,7 @@ export function PaymentsScreen() {
       if (status) params.set("status", status);
       return liveOrMock(
         () => paymentGet<{ items: AdminPayment[]; total: number }>(`/admin/payments?${params.toString()}`),
-        paginate(filtered, page, 20),
-        (data) => data.items.length === 0
+        paginate(filtered, page, 20)
       );
     },
   });

@@ -17,17 +17,13 @@ export interface LiveOrMock<T> {
   isMock: boolean;
 }
 
-export async function liveOrMock<T>(
-  request: () => Promise<T>,
-  mock: T,
-  isEmpty?: (data: T) => boolean
-): Promise<LiveOrMock<T>> {
+export async function liveOrMock<T>(request: () => Promise<T>, mock: T): Promise<LiveOrMock<T>> {
   try {
-    const data = await request();
-    if (isEmpty?.(data)) {
-      return { data: mock, isMock: true };
-    }
-    return { data, isMock: false };
+    // A successful response that happens to be empty (e.g. genuinely zero open
+    // SOS events) is real data, not a reason to fall back to fabricated demo
+    // rows -- only an actual request failure should do that. Screens render
+    // their own empty state (DataTable's emptyTitle/emptyHint) for this case.
+    return { data: await request(), isMock: false };
   } catch {
     return { data: mock, isMock: true };
   }

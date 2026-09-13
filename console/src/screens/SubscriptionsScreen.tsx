@@ -48,8 +48,7 @@ export function SubscriptionsScreen() {
               status ? `&status=${status}` : ""
             }`
           ),
-        paginate(filtered, page, 20),
-        (data) => data.items.length === 0
+        paginate(filtered, page, 20)
       );
     },
   });
@@ -63,6 +62,7 @@ export function SubscriptionsScreen() {
       await paymentPatch(`/admin/subscriptions/${sub.id}/cancel`, {});
     } catch (err) {
       setNotice(err instanceof Error ? err.message : "Unable to cancel plan");
+      return;
     }
     queryClient.setQueryData<LiveOrMock<{ items: AdminSubscription[]; total: number }>>(
       ["admin-subscriptions", page, planType, status],

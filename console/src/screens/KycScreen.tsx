@@ -7,6 +7,7 @@ import { Pagination } from "../components/Pagination";
 import { DataTable } from "../components/DataTable";
 import { FilterBar } from "../components/FilterBar";
 import { ActionMenu } from "../components/ActionMenu";
+import { ActionBanner } from "../components/ActionBanner";
 import { DemoDataBanner } from "../components/DemoDataBanner";
 import { liveOrMock, LiveOrMock, MOCK_KYC, paginate } from "../lib/mockData";
 
@@ -61,6 +62,7 @@ export function KycScreen() {
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
   const [notes, setNotes] = useState<Record<string, string>>({});
   const [savingId, setSavingId] = useState<string | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
   const queryClient = useQueryClient();
 
   const listKey = ["admin-kyc", page, status, docType, userIdFilter];
@@ -87,8 +89,7 @@ export function KycScreen() {
       if (userIdFilter) params.set("userId", userIdFilter);
       return liveOrMock(
         () => bookingGet<{ items: KycUserGroup[]; total: number }>(`/admin/kyc?${params.toString()}`),
-        paginate(mockGroups, page, 20),
-        (data) => data.items.length === 0
+        paginate(mockGroups, page, 20)
       );
     },
   });
@@ -121,11 +122,18 @@ export function KycScreen() {
 
   async function review(documentId: string, decision: "approve" | "reject") {
     setSavingId(documentId);
+    setNotice(null);
     const note = notes[documentId]?.trim() || undefined;
     try {
       await bookingPatch(`/admin/kyc/${documentId}`, { decision, note });
-    } catch {
-      /* keep the row updated when the API is offline */
+    } catch (err) {
+      setSavingId(null);
+      setNotice(
+        err instanceof Error
+          ? `Could not save this decision: ${err.message}`
+          : "Could not save this decision — the document is still pending."
+      );
+      return;
     }
     const nextStatus: KycStatus = decision === "approve" ? "verified" : "rejected";
     const patchDoc = (doc: KycDocument): KycDocument =>
@@ -155,6 +163,7 @@ export function KycScreen() {
 
   return (
     <div className="page-frame page-frame-fill">
+      <ActionBanner message={notice} onDismiss={() => setNotice(null)} />
       {isListMock ? <DemoDataBanner context="KYC" /> : null}
       <FilterBar>
         <select

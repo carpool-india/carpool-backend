@@ -16,7 +16,7 @@ export interface Booking {
   pickupPoint: GeoPoint | null;
   dropoffPoint: GeoPoint | null;
   createdAt: string;
-  trip: { originName: string; destinationName: string; departureTime: string } | null;
+  trip: { originName: string; destinationName: string; departureTime: string; driverId: string } | null;
 }
 
 export interface CreateBookingInput {

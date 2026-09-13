@@ -21,16 +21,22 @@ const envSchema = z
     CENTRIFUGO_API_URL: z.string().url().default("http://localhost:8010"),
     CENTRIFUGO_API_KEY: z.string().min(1),
     CENTRIFUGO_TOKEN_HMAC_SECRET: z.string().min(1),
+    CORS_ORIGIN: z.string().optional().default(""),
   })
-  // R2 has no code-level fallback (r2.ts just throws an opaque S3/DNS error on
-  // first KYC/profile-photo upload) so an unset var must fail fast at boot in
-  // production rather than fail on some user's first upload attempt.
   .superRefine((val, ctx) => {
     if (val.NODE_ENV !== "production") return;
+    // R2 has no code-level fallback (r2.ts just throws an opaque S3/DNS error on
+    // first KYC/profile-photo upload) so an unset var must fail fast at boot in
+    // production rather than fail on some user's first upload attempt.
     for (const key of ["R2_ACCOUNT_ID", "R2_ACCESS_KEY_ID", "R2_SECRET_ACCESS_KEY", "R2_BUCKET", "R2_PUBLIC_BASE_URL"] as const) {
       if (!val[key]) {
         ctx.addIssue({ code: z.ZodIssueCode.custom, message: `${key} must be set in production`, path: [key] });
       }
+    }
+    // Unset CORS_ORIGIN makes the cors() middleware permit every origin --
+    // fine for local dev, not something that should ever ship silently.
+    if (!val.CORS_ORIGIN) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, message: "CORS_ORIGIN must be set in production", path: ["CORS_ORIGIN"] });
     }
   });
 

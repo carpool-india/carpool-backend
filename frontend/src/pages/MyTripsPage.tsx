@@ -3,6 +3,8 @@ import { useNavigate } from "react-router-dom";
 import type { Booking, Trip } from "@rideshare/types";
 import { bookingGet, bookingPost, paymentGet, paymentPost } from "../services/api";
 import { formatInr, formatTripWhen } from "../utils/format";
+import { useAuthStore } from "../store/authStore";
+import { useTripStore } from "../store/tripStore";
 import { Alert, Card, EmptyState, Page, PageHeader, PrimaryButton, RouteEndpoints, SegmentedControl, StatusPill } from "../components/ui";
 
 const RAZORPAY_KEY_ID = import.meta.env.VITE_RAZORPAY_KEY_ID ?? "";
@@ -23,6 +25,8 @@ function matchesFilter(status: string, departureTime: string | null, filter: Rid
 
 export function MyTripsPage() {
   const navigate = useNavigate();
+  const currentUserId = useAuthStore((state) => state.user?.id);
+  const setActiveBooking = useTripStore((state) => state.setActiveBooking);
   const [kind, setKind] = useState<RideKind>("booked");
   const [filter, setFilter] = useState<RideFilter>("upcoming");
   const [bookings, setBookings] = useState<Booking[]>([]);
@@ -157,6 +161,18 @@ export function MyTripsPage() {
                         className="rounded-full bg-red-50 px-3 py-1.5 text-xs font-bold text-red-600 disabled:opacity-50"
                       >
                         {cancellingId === item.id ? "Cancelling…" : "Cancel"}
+                      </button>
+                    ) : null}
+                    {item.status === "completed" && item.trip?.driverId && item.trip.driverId !== currentUserId ? (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setActiveBooking(item);
+                          navigate(`/bookings/${item.id}/rate`);
+                        }}
+                        className="rounded-full bg-brand-light px-3 py-1.5 text-xs font-bold text-brand-dark"
+                      >
+                        Rate driver
                       </button>
                     ) : null}
                   </div>

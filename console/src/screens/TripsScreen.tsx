@@ -50,8 +50,7 @@ export function TripsScreen() {
       if (tripType) params.set("tripType", tripType);
       return liveOrMock(
         () => bookingGet<{ items: AdminTrip[]; total: number }>(`/admin/trips?${params.toString()}`),
-        paginate(filtered, page, 20),
-        (data) => data.items.length === 0
+        paginate(filtered, page, 20)
       );
     },
   });
@@ -65,6 +64,7 @@ export function TripsScreen() {
       await bookingPatch(`/admin/trips/${trip.id}/cancel`, {});
     } catch (err) {
       setNotice(err instanceof Error ? err.message : "Unable to cancel trip");
+      return;
     }
     queryClient.setQueryData<LiveOrMock<{ items: AdminTrip[]; total: number }>>(["admin-trips", page, status, tripType], (old) =>
       old
