@@ -72,7 +72,7 @@ export function OtpVerifyPage() {
   }
 
   return (
-    <div className="mx-auto flex w-full max-w-md flex-1 flex-col justify-center px-7 py-12 sm:px-10">
+    <div className="auth-form-content mx-auto flex w-full max-w-md flex-1 flex-col justify-center px-7 py-12 sm:px-10">
       <Link to="/login" className="text-sm font-bold text-brand hover:underline">
         ← Change number
       </Link>

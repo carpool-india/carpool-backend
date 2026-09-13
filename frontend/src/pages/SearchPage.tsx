@@ -4,6 +4,7 @@ import type { TripType } from "@rideshare/types";
 import { matchingPost } from "../services/api";
 import { SearchForm, toDateKey } from "../components/SearchForm";
 import { RideCard } from "../components/RideCard";
+import { Icon, icons } from "../components/Icon";
 import { Alert, Card, EmptyState, Page, PageHeader, PrimaryButton } from "../components/ui";
 import { useAuthStore } from "../store/authStore";
 import { useTripStore, type SearchMatch } from "../store/tripStore";
@@ -105,6 +106,8 @@ export function SearchPage() {
       setError(t(language, "selectBothPlaces"));
       return;
     }
+    setMatches([]);
+    setSearchNote(null);
     setSearching(true);
     setError(null);
     setSearched(true);
@@ -139,7 +142,7 @@ export function SearchPage() {
     if (incoming?.origin && incoming?.destination) {
       void search();
     }
-    // Run once on mount only, to auto-run a search handed off from the landing page.
+    // Run once on mount only, to auto-run a search handed off from another route.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -147,11 +150,12 @@ export function SearchPage() {
 
   return (
     <Page width="xl">
-      <PageHeader
+      <PageHeader kicker="A GOOD JOURNEY STARTS HERE"
         title={firstName ? `Where to, ${firstName}?` : "Where to?"}
         subtitle={t(language, "searchPageSubtitle")}
       />
 
+      <div className="search-intro"><div><h2>Your next journey, shared.</h2><p>Choose where and when. Find someone going your way.</p></div><span className="search-intro-icon" aria-hidden="true"><Icon path={icons.car} className="h-9 w-9" /></span></div>
       <Card className="p-5 sm:p-6">
         <SearchForm
           origin={origin}
@@ -170,7 +174,7 @@ export function SearchPage() {
         />
       </Card>
 
-      {searched ? (
+      {searched && !error ? (
         <div className="mt-8">
           {searchNote ? (
             <div className="mb-4">
@@ -216,11 +220,12 @@ export function SearchPage() {
       ) : (
         <div className="mt-10 grid grid-cols-1 gap-4 sm:grid-cols-3">
           {[
-            { title: "Verified drivers", body: "Aadhaar, DL, and face-match before anyone drives." },
-            { title: "See the fare first", body: "Price per seat is locked in before you book." },
-            { title: "Tracked the whole way", body: "Live GPS and SOS on every confirmed trip." },
+            { icon: icons.shield, title: "Know your company", body: "Review verification, ratings, and driver details before booking." },
+            { icon: icons.wallet, title: "See the fare first", body: "Price per seat is locked in before you book." },
+            { icon: icons.radar, title: "Tracked the whole way", body: "Live GPS and SOS on every confirmed trip." },
           ].map((item) => (
             <div key={item.title} className="rounded-3xl border border-line bg-white p-5 shadow-card">
+              <span className="search-benefit-icon" aria-hidden="true"><Icon path={item.icon} /></span>
               <p className="font-display text-base font-extrabold text-ink">{item.title}</p>
               <p className="mt-1 text-sm text-ink-soft">{item.body}</p>
             </div>

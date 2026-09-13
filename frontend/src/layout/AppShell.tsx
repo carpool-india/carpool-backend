@@ -35,7 +35,7 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
   return (
     <div className="flex h-full flex-col">
       <div className="px-4 pb-6 pt-5">
-        <Logo to="/search" variant="dark" />
+        <Logo to="/" variant="dark" />
       </div>
       <nav className="flex flex-col gap-1 px-3">
         {navItems.map((item) => (
@@ -83,8 +83,8 @@ export function AppShell() {
   const [drawerOpen, setDrawerOpen] = useState(false);
 
   return (
-    <div className="flex min-h-screen bg-paper font-sans text-ink">
-      <aside className="hidden w-[272px] shrink-0 bg-ink lg:block">
+    <div className="app-shell flex min-h-screen bg-paper font-sans text-ink">
+      <aside className="app-sidebar hidden w-[272px] shrink-0 bg-ink lg:block">
         <div className="sticky top-0 h-screen">
           <SidebarContent />
         </div>
@@ -93,7 +93,7 @@ export function AppShell() {
       {drawerOpen ? (
         <div className="fixed inset-0 z-40 lg:hidden">
           <button type="button" aria-label="Close menu" onClick={() => setDrawerOpen(false)} className="absolute inset-0 bg-ink/50" />
-          <aside className="relative flex h-full w-[272px] flex-col bg-ink shadow-floating">
+          <aside className="app-sidebar relative flex h-full w-[272px] flex-col bg-ink shadow-floating">
             <button
               type="button"
               onClick={() => setDrawerOpen(false)}

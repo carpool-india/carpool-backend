@@ -20,7 +20,7 @@ export function Page({
           : width === "xl"
             ? "max-w-5xl"
             : "max-w-6xl";
-  return <div className={`mx-auto ${max} px-5 py-8 sm:px-8 sm:py-10 ${className}`}>{children}</div>;
+  return <div className={`app-page mx-auto ${max} px-5 py-8 sm:px-8 sm:py-10 ${className}`}>{children}</div>;
 }
 
 export function PageHeader({
@@ -35,7 +35,7 @@ export function PageHeader({
   action?: ReactNode;
 }) {
   return (
-    <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
+    <div className="page-heading mb-6 flex flex-wrap items-end justify-between gap-4">
       <div>
         {kicker ? <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-brand">{kicker}</p> : null}
         <h1 className="font-display text-3xl font-extrabold tracking-tight text-ink sm:text-[2rem]">{title}</h1>
@@ -47,13 +47,13 @@ export function PageHeader({
 }
 
 export function Card({ children, className = "" }: { children: ReactNode; className?: string }) {
-  return <div className={`rounded-3xl border border-line bg-white shadow-card ${className}`}>{children}</div>;
+  return <div className={`surface-card rounded-3xl border border-line bg-white shadow-card ${className}`}>{children}</div>;
 }
 
 export function PrimaryButton({ className = "", children, ...props }: ButtonHTMLAttributes<HTMLButtonElement>) {
   return (
     <button
-      className={`inline-flex items-center justify-center gap-2 rounded-full bg-brand px-5 py-3 text-sm font-bold text-white shadow-card transition hover:-translate-y-0.5 hover:bg-brand-dark disabled:cursor-not-allowed disabled:translate-y-0 disabled:bg-line disabled:text-ink-faint disabled:shadow-none ${className}`}
+      className={`primary-button inline-flex items-center justify-center gap-2 rounded-full bg-brand px-5 py-3 text-sm font-bold text-white shadow-card transition hover:-translate-y-0.5 hover:bg-brand-dark disabled:cursor-not-allowed disabled:translate-y-0 disabled:bg-line disabled:text-ink-faint disabled:shadow-none ${className}`}
       {...props}
     >
       {children}
@@ -249,6 +249,7 @@ export function Toggle({
       <button
         type="button"
         role="switch"
+        aria-label={label}
         aria-checked={checked}
         onClick={() => onChange(!checked)}
         className={`h-6 w-11 shrink-0 rounded-full p-0.5 transition ${checked ? "bg-brand" : "bg-line"}`}

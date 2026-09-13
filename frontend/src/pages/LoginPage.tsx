@@ -41,7 +41,7 @@ export function LoginPage() {
   }
 
   return (
-    <div className="mx-auto flex w-full max-w-md flex-1 flex-col justify-center px-7 py-12 sm:px-10">
+    <div className="auth-form-content mx-auto flex w-full max-w-md flex-1 flex-col justify-center px-7 py-12 sm:px-10">
       <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-brand">Welcome</p>
       <h1 className="mt-2 font-display text-3xl font-extrabold tracking-tight text-ink sm:text-4xl">Log in to RideShare</h1>
       <p className="mt-3 text-sm leading-relaxed text-ink-soft">
@@ -49,32 +49,36 @@ export function LoginPage() {
       </p>
 
       <form onSubmit={(e) => void submit(e)} className="mt-9">
-        <label className="text-[11px] font-bold uppercase tracking-[0.14em] text-ink-faint">Mobile number</label>
-        <div className="mt-2 flex items-center gap-3 rounded-2xl border border-[#E4DCCE] bg-white px-4 py-4 shadow-sm transition focus-within:border-brand focus-within:shadow-glow">
+        <label htmlFor="login-phone" className="text-[11px] font-bold uppercase tracking-[0.14em] text-ink-faint">Mobile number</label>
+        <div className="auth-phone-field mt-2 flex items-center gap-3 rounded-2xl border border-[#DFE5D9] bg-white px-4 py-4 shadow-sm transition focus-within:border-brand focus-within:shadow-glow">
           <span className="text-lg font-extrabold text-ink">+91</span>
-          <div className="h-7 w-px bg-[#E4DCCE]" />
+          <div className="h-7 w-px bg-[#DFE5D9]" />
           <input
+            id="login-phone"
+            type="tel"
+            aria-describedby={error ? "phone-error" : undefined}
+            aria-invalid={!!error}
             value={formatLocalPhone(local)}
             onChange={(e) => setLocal(e.target.value.replace(/\D/g, "").slice(0, 10))}
             inputMode="numeric"
             placeholder="98765 43210"
             autoComplete="tel-national"
             autoFocus
-            className="w-full bg-transparent text-lg font-bold tracking-wide text-ink outline-none placeholder:font-normal placeholder:text-ink-faint"
+            className="min-w-0 w-full bg-transparent text-lg font-bold tracking-wide text-ink outline-none placeholder:font-normal placeholder:text-ink-faint"
           />
         </div>
-        {error ? <p className="mt-2 text-sm text-red-600">{error}</p> : null}
+        {error ? <p id="phone-error" role="alert" className="mt-2 text-sm text-red-600">{error}</p> : null}
         <button
           type="submit"
           disabled={loading || local.length !== 10}
-          className="mt-6 w-full rounded-full bg-brand py-4 text-sm font-bold text-white shadow-lg transition hover:-translate-y-0.5 hover:bg-brand-dark disabled:translate-y-0 disabled:cursor-not-allowed disabled:bg-[#D9D0C2] disabled:text-ink-faint disabled:shadow-none"
+          className="mt-6 w-full rounded-full bg-brand py-4 text-sm font-bold text-white shadow-lg transition hover:-translate-y-0.5 hover:bg-brand-dark disabled:translate-y-0 disabled:cursor-not-allowed disabled:bg-[#DFE5D9] disabled:text-ink-faint disabled:shadow-none"
         >
           {loading ? "Sending code…" : "Continue"}
         </button>
       </form>
 
       <ul className="mt-10 space-y-3 text-sm font-semibold text-ink-soft">
-        {["Aadhaar + DL verified drivers", "UPI held in escrow until you arrive", "Live tracking and one-tap SOS"].map((item) => (
+        {["Review driver verification and ratings", "Pay your driver directly by UPI or cash", "Live tracking and in-trip SOS"].map((item) => (
           <li key={item} className="flex items-center gap-2.5">
             <span className="flex h-6 w-6 items-center justify-center rounded-full bg-brand text-white">
               <Icon path={icons.check} className="h-3.5 w-3.5" />

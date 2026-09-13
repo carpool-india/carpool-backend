@@ -2,6 +2,12 @@ export type AppLanguage = "en" | "hi" | "ta";
 
 export const translations = {
   en: {
+    landingTitle1: "Good company.",
+    landingTitle2: "Great journeys.",
+    landingTitle3: "One shared ride.",
+    landingEyebrow: "A better way to go places",
+    landingDescription: "Your everyday commute. That overdue weekend trip. Find someone going your way, and make the journey part of the good stuff.",
+    offerRide: "Offer a ride",
     appName: "RideShare India",
     loginTitle: "Enter your mobile number",
     loginSubtitle: "We will send a 6-digit OTP via SMS",
@@ -282,6 +288,12 @@ export const translations = {
     rideFoundPlural: "rides found",
   },
   hi: {
+    landingTitle1: "अच्छा साथ।",
+    landingTitle2: "यादगार सफ़र।",
+    landingTitle3: "एक साझा सवारी।",
+    landingEyebrow: "सफ़र करने का बेहतर तरीका",
+    landingDescription: "रोज़ का आना-जाना हो या सप्ताहांत की यात्रा। अपनी दिशा में जाने वाले लोगों से मिलें और सफ़र का आनंद साथ लें।",
+    offerRide: "सवारी साझा करें",
     appName: "राइडशेयर इंडिया",
     loginTitle: "अपना मोबाइल नंबर दर्ज करें",
     loginSubtitle: "हम एसएमएस पर 6 अंकों का ओटीपी भेजेंगे",
@@ -562,6 +574,12 @@ export const translations = {
     rideFoundPlural: "राइड्स मिलीं",
   },
   ta: {
+    landingTitle1: "நல்ல துணை.",
+    landingTitle2: "இனிய பயணம்.",
+    landingTitle3: "ஒன்றாகச் செல்வோம்.",
+    landingEyebrow: "பயணிக்க ஒரு சிறந்த வழி",
+    landingDescription: "தினசரி வேலைப் பயணமோ, வார இறுதிச் சுற்றுலாவோ. உங்கள் வழியில் செல்லும் ஒருவரைக் கண்டறிந்து, பயணத்தை இனிமையாக்குங்கள்.",
+    offerRide: "பயணத்தைப் பகிருங்கள்",
     appName: "ரைட்ஷேர் இந்தியா",
     loginTitle: "உங்கள் மொபைல் எண்ணை உள்ளிடவும்",
     loginSubtitle: "எஸ்எம்எஸ் மூலம் 6 இலக்க OTP அனுப்புவோம்",

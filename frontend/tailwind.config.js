@@ -9,20 +9,20 @@ export default {
       },
       colors: {
         brand: {
-          DEFAULT: "#0F766E",
-          light: "#CCFBF1",
-          dark: "#042F2E",
+          DEFAULT: "#285A40",
+          light: "#E5F1CE",
+          dark: "#153E32",
         },
         ink: {
-          DEFAULT: "#0B211F",
-          soft: "#4A6864",
-          faint: "#7C9994",
+          DEFAULT: "#183D32",
+          soft: "#586F5C",
+          faint: "#6B806C",
         },
         paper: {
-          DEFAULT: "#F5FAF9",
+          DEFAULT: "#F7F8F2",
           card: "#FFFFFF",
         },
-        line: "#DCEAE7",
+        line: "#DFE5D9",
         accent: {
           DEFAULT: "#F0A93C",
           dark: "#B5741A",
