@@ -1,3 +1,4 @@
+import { afterLoginPath } from "../utils/navigation";
 import { useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import type { Gender } from "@rideshare/types";
@@ -37,7 +38,7 @@ export function ProfileSetupPage() {
       return;
     }
     setUser({ ...user, name: updated.name as string, gender: updated.gender as Gender });
-    navigate(from ?? "/", { replace: true });
+    navigate(afterLoginPath(from), { replace: true });
   }
 
   return (

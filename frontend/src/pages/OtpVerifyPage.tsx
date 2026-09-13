@@ -1,3 +1,4 @@
+import { afterLoginPath } from "../utils/navigation";
 import { useEffect, useRef, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { otp6Schema } from "@rideshare/utils";
@@ -68,7 +69,7 @@ export function OtpVerifyPage() {
       navigate("/profile-setup", { replace: true, state: { from } });
       return;
     }
-    navigate(from ?? "/", { replace: true });
+    navigate(afterLoginPath(from), { replace: true });
   }
 
   return (
