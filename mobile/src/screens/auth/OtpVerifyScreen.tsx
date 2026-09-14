@@ -34,8 +34,13 @@ export function OtpVerifyScreen({
     if (cooldown > 0 || loading) {
       return;
     }
-    await sendOtp(route.params.phone);
-    setCooldown(RESEND_COOLDOWN_SECONDS);
+    try {
+      await sendOtp(route.params.phone);
+      setOtp("");
+      setCooldown(RESEND_COOLDOWN_SECONDS);
+    } catch {
+      // The auth hook displays the error and allows another resend attempt.
+    }
   }
 
   async function submit() {
@@ -43,16 +48,23 @@ export function OtpVerifyScreen({
     if (!parsed.success) {
       return;
     }
-    const user = await verifyOtp(route.params.phone, parsed.data);
-    if (!user.name) {
-      navigation.replace("ProfileSetup");
-      return;
+    try {
+      const user = await verifyOtp(route.params.phone, parsed.data);
+      if (!user.name) {
+        navigation.replace("ProfileSetup");
+        return;
+      }
+      if (!user.aadhaarVerified || !user.faceMatchDone) {
+        navigation.replace("Kyc");
+        return;
+      }
+      navigation.replace("Main");
+    } catch (verifyError) {
+      // Missing/expired/consumed codes need a new request, not another verification.
+      if (verifyError instanceof Error && /request a new (?:OTP|one)/i.test(verifyError.message)) {
+        setCooldown(0);
+      }
     }
-    if (!user.aadhaarVerified || !user.faceMatchDone) {
-      navigation.replace("Kyc");
-      return;
-    }
-    navigation.replace("Main");
   }
 
   return (

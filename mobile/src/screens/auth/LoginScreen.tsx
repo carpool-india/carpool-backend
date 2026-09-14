@@ -57,8 +57,12 @@ export function LoginScreen({
     if (!parsed.success) {
       return;
     }
-    await sendOtp(parsed.data);
-    navigation.navigate("OtpVerify", { phone: parsed.data });
+    try {
+      await sendOtp(parsed.data);
+      navigation.navigate("OtpVerify", { phone: parsed.data });
+    } catch {
+      // The auth hook displays the error; keep the phone form available to retry.
+    }
   }
 
   return (

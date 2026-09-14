@@ -39,11 +39,15 @@ async function storeOtp(client: ReturnType<typeof getAdminClient>, phone: string
 
 export async function requestLoginOtp(phone: string): Promise<void> {
   const client = getAdminClient();
-  const { data: existing } = await client
+  const { data: existing, error: lookupError } = await client
     .from("login_otps")
     .select("last_sent_at")
     .eq("phone", phone)
     .maybeSingle();
+
+  if (lookupError) {
+    throw new Error("Unable to check OTP request. Please try again.");
+  }
 
   if (existing && Date.now() - new Date(existing.last_sent_at).getTime() < RESEND_COOLDOWN_MS) {
     throw new Error("Please wait before requesting another OTP");
@@ -103,11 +107,14 @@ export async function verifyLoginOtp(phone: string, otp: string): Promise<Sessio
   const client = getAdminClient();
   const { data: row, error } = await client
     .from("login_otps")
-    .select("otp_hash, expires_at, attempts")
+    .select("otp_hash, expires_at, attempts, last_sent_at")
     .eq("phone", phone)
     .maybeSingle();
-  if (error || !row) {
-    throw new Error("No OTP request found for this number");
+  if (error) {
+    throw new Error("Unable to check OTP request. Please try again.");
+  }
+  if (!row) {
+    throw new Error("No OTP request found for this number. Please request a new OTP.");
   }
   if (new Date(row.expires_at).getTime() < Date.now()) {
     throw new Error("OTP has expired, please request a new one");
@@ -128,9 +135,25 @@ export async function verifyLoginOtp(phone: string, otp: string): Promise<Sessio
     throw new Error("Incorrect OTP");
   }
 
-  await client.from("login_otps").delete().eq("phone", phone);
-
-  return mintSupabaseSession(phone);
+  // Keep the code available if the auth provider cannot create a session.
+  const session = await mintSupabaseSession(phone);
+  // Only the request that atomically consumes this exact OTP may return a session.
+  // A concurrent resend must not be deleted, even if it generates the same code.
+  const { data: consumed, error: consumeError } = await client
+    .from("login_otps")
+    .delete()
+    .eq("phone", phone)
+    .eq("otp_hash", row.otp_hash)
+    .eq("last_sent_at", row.last_sent_at)
+    .select("phone")
+    .maybeSingle();
+  if (consumeError) {
+    throw new Error("Unable to complete OTP verification. Please try again.");
+  }
+  if (!consumed) {
+    throw new Error("This OTP was already used or replaced. Please request a new OTP.");
+  }
+  return session;
 }
 
 async function mintSupabaseSession(phone: string): Promise<Session> {

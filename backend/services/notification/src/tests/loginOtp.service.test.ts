@@ -252,3 +252,86 @@ describe("verifyLoginOtp", () => {
     );
   });
 });
+
+
+describe("OTP consumption and retry regressions", () => {
+  function setup(consumeResult: { data: unknown; error: unknown } = { data: { phone: NON_TEST_PHONE }, error: null }) {
+    const row = {
+      otp_hash: hashOtp("123456"),
+      expires_at: new Date(Date.now() + 60_000).toISOString(),
+      last_sent_at: new Date().toISOString(),
+      attempts: 0,
+    };
+    const otps = makeTable({ maybeSingleResult: { data: row, error: null } });
+    otps.delete.mockImplementation(() => {
+      otps.maybeSingle.mockResolvedValue(consumeResult);
+      return otps;
+    });
+    const users = makeTable({ maybeSingleResult: { data: { supabase_auth_id: "auth-id" }, error: null } });
+    const updateUserById = jest.fn().mockResolvedValue({ error: null });
+    const mint = jest.fn().mockResolvedValue({
+      data: { session: { access_token: "access", refresh_token: "refresh", user: { id: "auth-id" } } },
+      error: null,
+    });
+    mockedGetAdminClient.mockReturnValue({
+      from: jest.fn((name: string) => name === "users" ? users : otps),
+      auth: { admin: {
+        updateUserById,
+        generateLink: jest.fn().mockResolvedValue({ data: { properties: { hashed_token: "hash" } }, error: null }),
+      } },
+    } as never);
+    mockedGetAnonClient.mockReturnValue({ auth: { verifyOtp: mint } } as never);
+    return { otps, row, updateUserById, mint };
+  }
+
+  it("reports a database lookup failure separately from a missing request", async () => {
+    const { otps, mint } = setup();
+    otps.maybeSingle.mockResolvedValue({ data: null, error: { message: "database unavailable" } });
+    await expect(verifyLoginOtp(NON_TEST_PHONE, "123456")).rejects.toThrow("Unable to check OTP request");
+    expect(mint).not.toHaveBeenCalled();
+    expect(otps.delete).not.toHaveBeenCalled();
+  });
+
+  it("does not send an OTP if its request lookup fails", async () => {
+    const { otps } = setup();
+    otps.maybeSingle.mockResolvedValue({ data: null, error: { message: "database unavailable" } });
+    await expect(requestLoginOtp(NON_TEST_PHONE)).rejects.toThrow("Unable to check OTP request");
+    expect(mockedSendTwoFactorAutogenSms).not.toHaveBeenCalled();
+    expect(mockedSendFast2Sms).not.toHaveBeenCalled();
+    expect(mockedSendSms).not.toHaveBeenCalled();
+  });
+
+  it("keeps the OTP when session preparation fails and allows retry", async () => {
+    const { otps, updateUserById } = setup();
+    updateUserById.mockResolvedValueOnce({ error: { message: "auth unavailable" } });
+    await expect(verifyLoginOtp(NON_TEST_PHONE, "123456")).rejects.toThrow("Unable to prepare session");
+    expect(otps.delete).not.toHaveBeenCalled();
+    await expect(verifyLoginOtp(NON_TEST_PHONE, "123456")).resolves.toHaveProperty("access_token", "access");
+    expect(otps.delete).toHaveBeenCalledTimes(1);
+  });
+
+  it("keeps the OTP when session minting fails", async () => {
+    const { otps, mint } = setup();
+    mint.mockResolvedValueOnce({ data: { session: null }, error: { message: "auth unavailable" } });
+    await expect(verifyLoginOtp(NON_TEST_PHONE, "123456")).rejects.toThrow("auth unavailable");
+    expect(otps.delete).not.toHaveBeenCalled();
+  });
+
+  it("consumes only the exact request after session minting succeeds", async () => {
+    const { otps, row, mint } = setup();
+    await verifyLoginOtp(NON_TEST_PHONE, "123456");
+    expect(otps.eq).toHaveBeenCalledWith("otp_hash", row.otp_hash);
+    expect(otps.eq).toHaveBeenCalledWith("last_sent_at", row.last_sent_at);
+    expect(mint.mock.invocationCallOrder[0]).toBeLessThan(otps.delete.mock.invocationCallOrder[0]);
+  });
+
+  it("does not return a session when another verification or resend replaced the request", async () => {
+    setup({ data: null, error: null });
+    await expect(verifyLoginOtp(NON_TEST_PHONE, "123456")).rejects.toThrow("already used or replaced");
+  });
+
+  it("does not return a session if OTP consumption fails", async () => {
+    setup({ data: null, error: { message: "database unavailable" } });
+    await expect(verifyLoginOtp(NON_TEST_PHONE, "123456")).rejects.toThrow("Unable to complete OTP verification");
+  });
+});
