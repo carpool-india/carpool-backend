@@ -22,9 +22,21 @@
 
 DROP POLICY IF EXISTS users_select_authenticated ON users;
 
+-- NOT `... OR id = public.current_app_user_id()` (the original 011 policy,
+-- before 012 immediately widened it to USING(true) and this clause never
+-- actually ran in production): current_app_user_id() is not SECURITY DEFINER,
+-- so it queries `users` under the CALLER's own RLS -- i.e. THIS policy again.
+-- First real-world exercise of this exact clause (via this migration)
+-- produced infinite recursion / "stack depth limit exceeded" on every
+-- authenticated users query, including the profile fetch right after OTP
+-- login. The dropped clause was redundant anyway: current_app_user_id()
+-- resolves to the row where supabase_auth_id = auth.uid(), so `id =
+-- current_app_user_id()` and `supabase_auth_id = auth.uid()` are true for
+-- exactly the same row -- the first clause alone is already a complete,
+-- non-recursive self-check.
 CREATE POLICY users_select_own ON users
   FOR SELECT TO authenticated
-  USING (supabase_auth_id = auth.uid() OR id = public.current_app_user_id());
+  USING (supabase_auth_id = auth.uid());
 
 DROP POLICY IF EXISTS driver_profiles_select ON driver_profiles;
 -- driver_profiles_write_own (FOR ALL, self-scoped) already covers SELECT for a
