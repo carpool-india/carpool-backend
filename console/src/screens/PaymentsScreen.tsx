@@ -7,8 +7,6 @@ import { DataTable } from "../components/DataTable";
 import { FilterBar } from "../components/FilterBar";
 import { ActionBanner } from "../components/ActionBanner";
 import { ActionMenu } from "../components/ActionMenu";
-import { DemoDataBanner } from "../components/DemoDataBanner";
-import { liveOrMock, MOCK_PAYMENTS, paginate } from "../lib/mockData";
 
 interface AdminPayment {
   id: string;
@@ -42,16 +40,10 @@ export function PaymentsScreen() {
   const query = useQuery({
     queryKey: ["admin-payments", page, type, status],
     queryFn: () => {
-      const filtered = MOCK_PAYMENTS.filter(
-        (payment) => (!type || payment.type === type) && (!status || payment.status === status)
-      );
       const params = new URLSearchParams({ page: String(page), limit: "20" });
       if (type) params.set("type", type);
       if (status) params.set("status", status);
-      return liveOrMock(
-        () => paymentGet<{ items: AdminPayment[]; total: number }>(`/admin/payments?${params.toString()}`),
-        paginate(filtered, page, 20)
-      );
+      return paymentGet<{ items: AdminPayment[]; total: number }>(`/admin/payments?${params.toString()}`);
     },
   });
 
@@ -79,12 +71,10 @@ export function PaymentsScreen() {
       setRefunding(false);
     }
   }
-  const isMock = Boolean(query.data?.isMock);
 
   return (
     <div className="page-frame page-frame-fill">
       <ActionBanner message={notice} onDismiss={() => setNotice(null)} />
-      {isMock ? <DemoDataBanner context="payment" /> : null}
       <FilterBar>
         <select
           value={type}
@@ -138,13 +128,13 @@ export function PaymentsScreen() {
               ),
           },
         ]}
-        rows={query.data?.data.items ?? []}
+        rows={query.data?.items ?? []}
         rowKey={(payment) => payment.id}
         loading={query.isLoading}
         error={query.error instanceof Error ? query.error.message : query.error ? "Unable to load payments" : null}
         emptyTitle="No payments yet"
         emptyHint="UPI captures and refunds will list here as they settle."
-        footer={<Pagination page={page} total={query.data?.data.total ?? 0} limit={20} onPageChange={setPage} />}
+        footer={<Pagination page={page} total={query.data?.total ?? 0} limit={20} onPageChange={setPage} />}
       />
     </div>
   );

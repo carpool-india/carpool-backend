@@ -7,8 +7,6 @@ import { DataTable } from "../components/DataTable";
 import { FilterBar } from "../components/FilterBar";
 import { ActionBanner } from "../components/ActionBanner";
 import { ActionMenu } from "../components/ActionMenu";
-import { DemoDataBanner } from "../components/DemoDataBanner";
-import { liveOrMock, MOCK_REPORTS, paginate } from "../lib/mockData";
 
 type ReportStatus = "open" | "reviewed" | "dismissed";
 
@@ -52,13 +50,9 @@ export function ReportsScreen() {
   const query = useQuery({
     queryKey: listKey,
     queryFn: () => {
-      const filtered = MOCK_REPORTS.filter((row) => !status || row.status === status);
       const params = new URLSearchParams({ page: String(page), limit: "20" });
       if (status) params.set("status", status);
-      return liveOrMock(
-        () => bookingGet<{ items: UserReport[]; total: number }>(`/admin/reports?${params.toString()}`),
-        paginate(filtered, page, 20)
-      );
+      return bookingGet<{ items: UserReport[]; total: number }>(`/admin/reports?${params.toString()}`);
     },
   });
 
@@ -73,12 +67,9 @@ export function ReportsScreen() {
     await queryClient.invalidateQueries({ queryKey: ["admin-reports"] });
   }
 
-  const isMock = Boolean(query.data?.isMock);
-
   return (
     <div className="page-frame page-frame-fill">
       <ActionBanner message={notice} onDismiss={() => setNotice(null)} />
-      {isMock ? <DemoDataBanner context="report" /> : null}
       <FilterBar>
         <select
           value={status}
@@ -134,13 +125,13 @@ export function ReportsScreen() {
               ) : null,
           },
         ]}
-        rows={query.data?.data.items ?? []}
+        rows={query.data?.items ?? []}
         rowKey={(row) => row.id}
         loading={query.isLoading}
         error={query.error instanceof Error ? query.error.message : query.error ? "Unable to load reports" : null}
         emptyTitle="No reports"
         emptyHint="Reports submitted by users about other users will appear here."
-        footer={<Pagination page={page} total={query.data?.data.total ?? 0} limit={20} onPageChange={setPage} />}
+        footer={<Pagination page={page} total={query.data?.total ?? 0} limit={20} onPageChange={setPage} />}
       />
     </div>
   );

@@ -7,8 +7,6 @@ import { DataTable } from "../components/DataTable";
 import { FilterBar } from "../components/FilterBar";
 import { ActionBanner } from "../components/ActionBanner";
 import { ActionMenu } from "../components/ActionMenu";
-import { DemoDataBanner } from "../components/DemoDataBanner";
-import { liveOrMock, LiveOrMock, MOCK_CONTACTS, MOCK_SAFETY, paginate } from "../lib/mockData";
 
 interface SafetyEvent {
   id: string;
@@ -43,24 +41,12 @@ export function SafetyScreen() {
 
   const query = useQuery({
     queryKey: ["admin-safety-events", page, eventType, severity, resolvedFilter],
-    queryFn: () => {
-      const filtered = MOCK_SAFETY.filter((event) => {
-        const typeOk = !eventType || event.event_type === eventType;
-        const severityOk = !severity || event.severity === severity;
-        const resolvedOk =
-          resolvedFilter === "" ? true : resolvedFilter === "true" ? event.resolved : !event.resolved;
-        return typeOk && severityOk && resolvedOk;
-      });
-      return liveOrMock(
-        () =>
-          safetyGet<{ items: SafetyEvent[]; total: number }>(
-            `/admin/safety-events?page=${page}&limit=20${eventType ? `&eventType=${eventType}` : ""}${
-              severity ? `&severity=${severity}` : ""
-            }${resolvedFilter ? `&resolved=${resolvedFilter}` : ""}`
-          ),
-        paginate(filtered, page, 20)
-      );
-    },
+    queryFn: () =>
+      safetyGet<{ items: SafetyEvent[]; total: number }>(
+        `/admin/safety-events?page=${page}&limit=20${eventType ? `&eventType=${eventType}` : ""}${
+          severity ? `&severity=${severity}` : ""
+        }${resolvedFilter ? `&resolved=${resolvedFilter}` : ""}`
+      ),
     refetchInterval: 15000,
   });
 
@@ -72,18 +58,9 @@ export function SafetyScreen() {
       setNotice(err instanceof Error ? err.message : "Unable to resolve event");
       return;
     }
-    queryClient.setQueryData<LiveOrMock<{ items: SafetyEvent[]; total: number }>>(
+    queryClient.setQueryData<{ items: SafetyEvent[]; total: number }>(
       ["admin-safety-events", page, eventType, severity, resolvedFilter],
-      (old) =>
-        old
-          ? {
-              ...old,
-              data: {
-                ...old.data,
-                items: old.data.items.map((item) => (item.id === id ? { ...item, resolved: true } : item)),
-              },
-            }
-          : old
+      (old) => (old ? { ...old, items: old.items.map((item) => (item.id === id ? { ...item, resolved: true } : item)) } : old)
     );
     void queryClient.invalidateQueries({ queryKey: ["admin-sos-unresolved"] });
     void queryClient.invalidateQueries({ queryKey: ["admin-safety-events"] });
@@ -93,22 +70,15 @@ export function SafetyScreen() {
   const contacts = useQuery({
     queryKey: ["admin-contacts", selected?.user_id],
     enabled: Boolean(selected?.user_id),
-    queryFn: () => {
-      const userId = selected?.user_id ?? "";
-      return liveOrMock(
-        () => bookingGet<{ items: Array<{ id: string; name: string; phone: string; relationship: string }> }>(`/admin/users/${userId}/contacts`),
-        { items: MOCK_CONTACTS[userId] ?? [] }
-      );
-    },
+    queryFn: () =>
+      bookingGet<{ items: Array<{ id: string; name: string; phone: string; relationship: string }> }>(
+        `/admin/users/${selected?.user_id ?? ""}/contacts`
+      ),
   });
-
-  const isListMock = Boolean(query.data?.isMock);
-  const isContactsMock = Boolean(contacts.data?.isMock);
 
   return (
     <div className="page-frame page-frame-fill">
       <ActionBanner message={notice} onDismiss={() => setNotice(null)} />
-      {isListMock ? <DemoDataBanner context="safety event" /> : null}
       <FilterBar>
         <select
           value={eventType}
@@ -192,13 +162,13 @@ export function SafetyScreen() {
             ),
           },
         ]}
-        rows={query.data?.data.items ?? []}
+        rows={query.data?.items ?? []}
         rowKey={(event) => event.id}
         loading={query.isLoading}
         error={query.error instanceof Error ? query.error.message : query.error ? "Unable to load safety events" : null}
         emptyTitle="No safety events"
         emptyHint="SOS, OTP failures, and deviations will show in this table as soon as they are raised."
-        footer={<Pagination page={page} total={query.data?.data.total ?? 0} limit={20} onPageChange={setPage} />}
+        footer={<Pagination page={page} total={query.data?.total ?? 0} limit={20} onPageChange={setPage} />}
       />
 
       {selected ? (
@@ -242,15 +212,14 @@ export function SafetyScreen() {
               </div>
             ) : null}
             <h3 className="section-label">Emergency contacts</h3>
-            {isContactsMock ? <DemoDataBanner context="emergency contact" /> : null}
             {contacts.isLoading ? <p className="muted">Loading emergency contacts...</p> : contacts.isError ? (
               <div role="alert">
                 <p>Emergency contacts could not be loaded.</p>
                 <button type="button" className="table-action" onClick={() => void contacts.refetch()}>Retry contacts</button>
               </div>
-            ) : contacts.data?.data.items.length ? (
+            ) : contacts.data?.items.length ? (
               <ul className="contact-list">
-                {contacts.data.data.items.map((contact) => (
+                {contacts.data.items.map((contact) => (
                   <li key={contact.id}>
                     <strong>{contact.name}</strong> · {contact.relationship}
                     <div className="muted">{contact.phone}</div>

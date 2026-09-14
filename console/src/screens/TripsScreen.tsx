@@ -7,8 +7,6 @@ import { DataTable } from "../components/DataTable";
 import { FilterBar } from "../components/FilterBar";
 import { ActionBanner } from "../components/ActionBanner";
 import { ActionMenu } from "../components/ActionMenu";
-import { DemoDataBanner } from "../components/DemoDataBanner";
-import { liveOrMock, MOCK_TRIPS, paginate } from "../lib/mockData";
 
 interface AdminTrip {
   id: string;
@@ -42,16 +40,10 @@ export function TripsScreen() {
   const query = useQuery({
     queryKey: ["admin-trips", page, status, tripType],
     queryFn: () => {
-      const filtered = MOCK_TRIPS.filter(
-        (trip) => (!status || trip.status === status) && (!tripType || trip.trip_type === tripType)
-      );
       const params = new URLSearchParams({ page: String(page), limit: "20" });
       if (status) params.set("status", status);
       if (tripType) params.set("tripType", tripType);
-      return liveOrMock(
-        () => bookingGet<{ items: AdminTrip[]; total: number }>(`/admin/trips?${params.toString()}`),
-        paginate(filtered, page, 20)
-      );
+      return bookingGet<{ items: AdminTrip[]; total: number }>(`/admin/trips?${params.toString()}`);
     },
   });
 
@@ -71,12 +63,9 @@ export function TripsScreen() {
     void queryClient.invalidateQueries({ queryKey: ["admin-bookings"] });
   }
 
-  const isMock = Boolean(query.data?.isMock);
-
   return (
     <div className="page-frame page-frame-fill">
       <ActionBanner message={notice} onDismiss={() => setNotice(null)} />
-      {isMock ? <DemoDataBanner context="trip" /> : null}
       <FilterBar>
         <select
           value={status}
@@ -133,13 +122,13 @@ export function TripsScreen() {
               ),
           },
         ]}
-        rows={query.data?.data.items ?? []}
+        rows={query.data?.items ?? []}
         rowKey={(trip) => trip.id}
         loading={query.isLoading}
         error={query.error instanceof Error ? query.error.message : query.error ? "Unable to load trips" : null}
         emptyTitle="No trips yet"
         emptyHint="Published rides will list here with route, seats, and status."
-        footer={<Pagination page={page} total={query.data?.data.total ?? 0} limit={20} onPageChange={setPage} />}
+        footer={<Pagination page={page} total={query.data?.total ?? 0} limit={20} onPageChange={setPage} />}
       />
     </div>
   );

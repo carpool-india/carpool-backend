@@ -7,8 +7,6 @@ import { DataTable } from "../components/DataTable";
 import { FilterBar } from "../components/FilterBar";
 import { ActionBanner } from "../components/ActionBanner";
 import { ActionMenu } from "../components/ActionMenu";
-import { DemoDataBanner } from "../components/DemoDataBanner";
-import { liveOrMock, MOCK_VEHICLES, paginate } from "../lib/mockData";
 
 interface AdminVehicle {
   id: string;
@@ -37,18 +35,10 @@ export function VehiclesScreen() {
 
   const query = useQuery({
     queryKey: ["admin-vehicles", page, verified],
-    queryFn: () => {
-      const filtered = MOCK_VEHICLES.filter((row) =>
-        verified === "" ? true : verified === "true" ? row.is_verified : !row.is_verified
-      );
-      return liveOrMock(
-        () =>
-          bookingGet<{ items: AdminVehicle[]; total: number }>(
-            `/admin/vehicles?page=${page}&limit=20${verified ? `&verified=${verified}` : ""}`
-          ),
-        paginate(filtered, page, 20)
-      );
-    },
+    queryFn: () =>
+      bookingGet<{ items: AdminVehicle[]; total: number }>(
+        `/admin/vehicles?page=${page}&limit=20${verified ? `&verified=${verified}` : ""}`
+      ),
   });
 
   async function setVerifiedFlag(vehicle: AdminVehicle, isVerified: boolean) {
@@ -62,12 +52,9 @@ export function VehiclesScreen() {
     await queryClient.invalidateQueries({ queryKey: ["admin-vehicles"] });
   }
 
-  const isMock = Boolean(query.data?.isMock);
-
   return (
     <div className="page-frame page-frame-fill">
       <ActionBanner message={notice} onDismiss={() => setNotice(null)} />
-      {isMock ? <DemoDataBanner context="vehicle" /> : null}
       <FilterBar>
         <select
           value={verified}
@@ -131,13 +118,13 @@ export function VehiclesScreen() {
             ),
           },
         ]}
-        rows={query.data?.data.items ?? []}
+        rows={query.data?.items ?? []}
         rowKey={(row) => row.id}
         loading={query.isLoading}
         error={query.error instanceof Error ? query.error.message : query.error ? "Unable to load vehicles" : null}
         emptyTitle="No vehicles yet"
         emptyHint="Cars and bikes added by drivers will appear here for verification."
-        footer={<Pagination page={page} total={query.data?.data.total ?? 0} limit={20} onPageChange={setPage} />}
+        footer={<Pagination page={page} total={query.data?.total ?? 0} limit={20} onPageChange={setPage} />}
       />
     </div>
   );

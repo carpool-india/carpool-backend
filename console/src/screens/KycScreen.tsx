@@ -8,8 +8,6 @@ import { DataTable } from "../components/DataTable";
 import { FilterBar } from "../components/FilterBar";
 import { ActionMenu } from "../components/ActionMenu";
 import { ActionBanner } from "../components/ActionBanner";
-import { DemoDataBanner } from "../components/DemoDataBanner";
-import { liveOrMock, LiveOrMock, MOCK_KYC, paginate } from "../lib/mockData";
 
 type DocType = "aadhaar" | "dl" | "selfie";
 type KycStatus = "pending" | "verified" | "failed" | "rejected";
@@ -45,14 +43,6 @@ const DOC_LABEL: Record<DocType, string> = {
   selfie: "Selfie",
 };
 
-function groupFromMock(userId: string): KycUserGroup | null {
-  const docs = MOCK_KYC.filter((row) => row.user_id === userId);
-  if (docs.length === 0) {
-    return null;
-  }
-  return { user: docs[0].users!, documents: docs };
-}
-
 export function KycScreen() {
   const [searchParams, setSearchParams] = useSearchParams();
   const userIdFilter = searchParams.get("userId") ?? "";
@@ -70,40 +60,18 @@ export function KycScreen() {
   const query = useQuery({
     queryKey: listKey,
     queryFn: () => {
-      const grouped = new Map<string, KycUserGroup>();
-      for (const row of MOCK_KYC) {
-        if (status && row.status !== status) continue;
-        if (docType && row.document_type !== docType) continue;
-        if (userIdFilter && row.user_id !== userIdFilter) continue;
-        const existing = grouped.get(row.user_id);
-        if (existing) {
-          existing.documents.push(row);
-        } else {
-          grouped.set(row.user_id, { user: row.users!, documents: [row] });
-        }
-      }
-      const mockGroups = Array.from(grouped.values());
       const params = new URLSearchParams({ page: String(page), limit: "20" });
       if (status) params.set("status", status);
       if (docType) params.set("docType", docType);
       if (userIdFilter) params.set("userId", userIdFilter);
-      return liveOrMock(
-        () => bookingGet<{ items: KycUserGroup[]; total: number }>(`/admin/kyc?${params.toString()}`),
-        paginate(mockGroups, page, 20)
-      );
+      return bookingGet<{ items: KycUserGroup[]; total: number }>(`/admin/kyc?${params.toString()}`);
     },
   });
 
   const detail = useQuery({
     queryKey: ["admin-kyc-detail-user", selectedUserId],
     enabled: Boolean(selectedUserId),
-    queryFn: () => {
-      if (!selectedUserId) {
-        return Promise.resolve({ data: null, isMock: false });
-      }
-      const fallback = groupFromMock(selectedUserId);
-      return liveOrMock(() => bookingGet<KycUserGroup>(`/admin/kyc/user/${selectedUserId}`), fallback);
-    },
+    queryFn: () => bookingGet<KycUserGroup>(`/admin/kyc/user/${selectedUserId}`),
   });
 
   function closeReview() {
@@ -140,33 +108,24 @@ export function KycScreen() {
       doc.id === documentId
         ? { ...doc, status: nextStatus, reviewed_at: new Date().toISOString(), review_note: note ?? null }
         : doc;
-    queryClient.setQueryData<LiveOrMock<{ items: KycUserGroup[]; total: number }>>(listKey, (old) =>
+    queryClient.setQueryData<{ items: KycUserGroup[]; total: number }>(listKey, (old) =>
       old
-        ? {
-            ...old,
-            data: {
-              ...old.data,
-              items: old.data.items.map((group) => ({ ...group, documents: group.documents.map(patchDoc) })),
-            },
-          }
+        ? { ...old, items: old.items.map((group) => ({ ...group, documents: group.documents.map(patchDoc) })) }
         : old
     );
-    queryClient.setQueryData<LiveOrMock<KycUserGroup | null>>(["admin-kyc-detail-user", selectedUserId], (old) =>
-      old && old.data ? { ...old, data: { ...old.data, documents: old.data.documents.map(patchDoc) } } : old
+    queryClient.setQueryData<KycUserGroup>(["admin-kyc-detail-user", selectedUserId], (old) =>
+      old ? { ...old, documents: old.documents.map(patchDoc) } : old
     );
     void queryClient.invalidateQueries({ queryKey: ["admin-kyc"] });
     void queryClient.invalidateQueries({ queryKey: ["admin-overview"] });
     setSavingId(null);
   }
 
-  const activeGroup = detail.data?.data;
-  const isListMock = Boolean(query.data?.isMock);
-  const isDetailMock = Boolean(detail.data?.isMock);
+  const activeGroup = detail.data;
 
   return (
     <div className="page-frame page-frame-fill">
       <ActionBanner message={notice} onDismiss={() => setNotice(null)} />
-      {isListMock ? <DemoDataBanner context="KYC" /> : null}
       <FilterBar>
         <select
           value={status}
@@ -250,13 +209,13 @@ export function KycScreen() {
             ),
           },
         ]}
-        rows={query.data?.data.items ?? []}
+        rows={query.data?.items ?? []}
         rowKey={(group) => group.user.id}
         loading={query.isLoading}
         error={query.error instanceof Error ? query.error.message : query.error ? "Unable to load documents" : null}
         emptyTitle="No documents in this queue"
         emptyHint="Uploaded Aadhaar, driving licence, and selfie files appear here for admin verification."
-        footer={<Pagination page={page} total={query.data?.data.total ?? 0} limit={20} onPageChange={setPage} />}
+        footer={<Pagination page={page} total={query.data?.total ?? 0} limit={20} onPageChange={setPage} />}
       />
 
       {selectedUserId && !activeGroup ? (
@@ -285,7 +244,6 @@ export function KycScreen() {
                 Close
               </button>
             </div>
-            {isDetailMock ? <DemoDataBanner context="KYC document" /> : null}
             {activeGroup.documents.map((doc) => {
               const canDecide = doc.status === "pending" || doc.status === "failed";
               return (

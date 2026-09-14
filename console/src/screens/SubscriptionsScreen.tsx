@@ -7,8 +7,6 @@ import { DataTable } from "../components/DataTable";
 import { FilterBar } from "../components/FilterBar";
 import { ActionBanner } from "../components/ActionBanner";
 import { ActionMenu } from "../components/ActionMenu";
-import { DemoDataBanner } from "../components/DemoDataBanner";
-import { liveOrMock, MOCK_SUBSCRIPTIONS, paginate } from "../lib/mockData";
 
 interface AdminSubscription {
   id: string;
@@ -37,20 +35,12 @@ export function SubscriptionsScreen() {
 
   const query = useQuery({
     queryKey: ["admin-subscriptions", page, planType, status],
-    queryFn: () => {
-      const filtered = MOCK_SUBSCRIPTIONS.filter(
-        (sub) => (!planType || sub.plan_type === planType) && (!status || sub.status === status)
-      );
-      return liveOrMock(
-        () =>
-          paymentGet<{ items: AdminSubscription[]; total: number }>(
-            `/admin/subscriptions?page=${page}&limit=20${planType ? `&planType=${planType}` : ""}${
-              status ? `&status=${status}` : ""
-            }`
-          ),
-        paginate(filtered, page, 20)
-      );
-    },
+    queryFn: () =>
+      paymentGet<{ items: AdminSubscription[]; total: number }>(
+        `/admin/subscriptions?page=${page}&limit=20${planType ? `&planType=${planType}` : ""}${
+          status ? `&status=${status}` : ""
+        }`
+      ),
   });
 
   async function cancel(sub: AdminSubscription) {
@@ -68,12 +58,9 @@ export function SubscriptionsScreen() {
     void queryClient.invalidateQueries({ queryKey: ["admin-revenue"] });
   }
 
-  const isMock = Boolean(query.data?.isMock);
-
   return (
     <div className="page-frame page-frame-fill">
       <ActionBanner message={notice} onDismiss={() => setNotice(null)} />
-      {isMock ? <DemoDataBanner context="subscription" /> : null}
       <FilterBar>
         <select
           value={planType}
@@ -129,13 +116,13 @@ export function SubscriptionsScreen() {
               ),
           },
         ]}
-        rows={query.data?.data.items ?? []}
+        rows={query.data?.items ?? []}
         rowKey={(sub) => sub.id}
         loading={query.isLoading}
         error={query.error instanceof Error ? query.error.message : query.error ? "Unable to load plans" : null}
         emptyTitle="No plans yet"
         emptyHint="Driver and passenger subscriptions will appear in this table when purchased."
-        footer={<Pagination page={page} total={query.data?.data.total ?? 0} limit={20} onPageChange={setPage} />}
+        footer={<Pagination page={page} total={query.data?.total ?? 0} limit={20} onPageChange={setPage} />}
       />
     </div>
   );

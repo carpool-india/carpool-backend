@@ -6,8 +6,6 @@ import { DataTable } from "../components/DataTable";
 import { FilterBar } from "../components/FilterBar";
 import { ActionBanner } from "../components/ActionBanner";
 import { ActionMenu } from "../components/ActionMenu";
-import { DemoDataBanner } from "../components/DemoDataBanner";
-import { liveOrMock, LiveOrMock, MOCK_RATINGS, paginate } from "../lib/mockData";
 
 interface AdminRating {
   id: string;
@@ -27,16 +25,10 @@ export function RatingsScreen() {
 
   const query = useQuery({
     queryKey: ["admin-ratings", page, maxStars],
-    queryFn: () => {
-      const filtered = MOCK_RATINGS.filter((rating) => !maxStars || rating.stars <= Number(maxStars));
-      return liveOrMock(
-        () =>
-          safetyGet<{ items: AdminRating[]; total: number }>(
-            `/admin/ratings?page=${page}&limit=20${maxStars ? `&maxStars=${maxStars}` : ""}`
-          ),
-        paginate(filtered, page, 20)
-      );
-    },
+    queryFn: () =>
+      safetyGet<{ items: AdminRating[]; total: number }>(
+        `/admin/ratings?page=${page}&limit=20${maxStars ? `&maxStars=${maxStars}` : ""}`
+      ),
   });
 
   async function hide(rating: AdminRating) {
@@ -50,26 +42,16 @@ export function RatingsScreen() {
       setNotice(err instanceof Error ? err.message : "Unable to hide rating");
       return;
     }
-    queryClient.setQueryData<LiveOrMock<{ items: AdminRating[]; total: number }>>(["admin-ratings", page, maxStars], (old) =>
+    queryClient.setQueryData<{ items: AdminRating[]; total: number }>(["admin-ratings", page, maxStars], (old) =>
       old
-        ? {
-            ...old,
-            data: {
-              ...old.data,
-              items: old.data.items.filter((item) => item.id !== rating.id),
-              total: Math.max(0, old.data.total - 1),
-            },
-          }
+        ? { ...old, items: old.items.filter((item) => item.id !== rating.id), total: Math.max(0, old.total - 1) }
         : old
     );
   }
 
-  const isMock = Boolean(query.data?.isMock);
-
   return (
     <div className="page-frame page-frame-fill">
       <ActionBanner message={notice} onDismiss={() => setNotice(null)} />
-      {isMock ? <DemoDataBanner context="rating" /> : null}
       <FilterBar>
         <select
           value={maxStars}
@@ -101,13 +83,13 @@ export function RatingsScreen() {
             render: (rating) => <ActionMenu items={[{ label: "Hide", onSelect: () => void hide(rating) }]} />,
           },
         ]}
-        rows={query.data?.data.items ?? []}
+        rows={query.data?.items ?? []}
         rowKey={(rating) => rating.id}
         loading={query.isLoading}
         error={query.error instanceof Error ? query.error.message : query.error ? "Unable to load ratings" : null}
         emptyTitle="No ratings yet"
         emptyHint="Passenger and driver ratings will fill this table after trips complete."
-        footer={<Pagination page={page} total={query.data?.data.total ?? 0} limit={20} onPageChange={setPage} />}
+        footer={<Pagination page={page} total={query.data?.total ?? 0} limit={20} onPageChange={setPage} />}
       />
     </div>
   );
